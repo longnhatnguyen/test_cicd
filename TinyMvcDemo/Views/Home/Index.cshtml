@@ -1,0 +1,48 @@
+﻿@model TinyMvcDemo.Models.HomePageViewModel
+@{
+    ViewData["Title"] = "CI/CD Demo";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="text-center mb-4">
+                <span class="badge rounded-pill text-bg-dark mb-3">GitHub -> Jenkins -> Docker -> ASP.NET MVC</span>
+                <h1 class="display-5 fw-bold">@Model.AppName</h1>
+                <p class="lead text-muted mb-0">@Model.DemoMessage</p>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Thong tin ban deploy dang chay</h2>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Commit</th>
+                                    <td><code>@Model.Commit</code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Build number</th>
+                                    <td><code>@Model.BuildNumber</code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Deployed at</th>
+                                    <td><code>@Model.DeployedAt</code></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Environment</th>
+                                    <td><code>@Model.EnvironmentName</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-center text-muted mt-4 mb-0">
+                Moi lan ban sua thong diep tren trang nay va push len repo, Jenkins se build lai va cap nhat site dang host tren may cua ban.
+            </p>
+        </div>
+    </div>
+</div>
