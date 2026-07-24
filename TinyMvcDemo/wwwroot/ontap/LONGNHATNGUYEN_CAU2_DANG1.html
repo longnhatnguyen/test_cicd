@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cau 2 Dang 1 - Dang ky tai khoan</title>
+    <title>Câu 2 Dạng 1 - Đăng ký tài khoản</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,36 +14,63 @@
         body {
             min-height: 100vh;
             font-family: "Segoe UI", Tahoma, sans-serif;
-            background: #f2f6fb;
+            background:
+                linear-gradient(90deg, rgba(35, 65, 95, 0.05) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(35, 65, 95, 0.05) 1px, transparent 1px),
+                #f6fbff;
+            background-size: 30px 30px;
             color: #203040;
             padding: 24px;
         }
 
-        .container {
-            width: min(100%, 1080px);
+        .desk {
+            width: min(100%, 1120px);
             margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #d9e2ec;
-            box-shadow: 0 16px 36px rgba(32, 48, 64, 0.12);
-            overflow: hidden;
         }
 
         .student-info {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 16px 18px;
+            border-radius: 8px;
             background: #23415f;
             color: #ffffff;
-            padding: 18px 24px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        .content {
-            padding: 24px;
+        .layout {
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border: 1px solid #d7e2eb;
+            border-radius: 8px;
+            box-shadow: 0 14px 32px rgba(32, 48, 64, 0.1);
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5edf3;
+        }
+
+        .panel-header span {
+            display: inline-block;
+            margin-bottom: 8px;
+            color: #2f6f90;
+            font-size: 0.82rem;
+            font-weight: 900;
+            text-transform: uppercase;
         }
 
         h1,
         h2 {
-            color: #23415f;
-            margin-bottom: 16px;
+            color: #18324a;
         }
 
         h1 {
@@ -51,16 +78,17 @@
         }
 
         h2 {
-            font-size: 1.25rem;
-            margin-top: 28px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+            font-size: 1.2rem;
+        }
+
+        form {
+            padding: 20px;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px 20px;
+            gap: 14px 18px;
         }
 
         .form-group.full {
@@ -70,16 +98,16 @@
         label {
             display: block;
             margin-bottom: 6px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .required {
-            color: #c62828;
+            color: #d94f30;
         }
 
         input {
             width: 100%;
-            padding: 10px 12px;
+            padding: 11px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 1rem;
@@ -89,12 +117,12 @@
         input:hover,
         input:focus {
             border-color: #2f6f90;
-            box-shadow: 0 0 0 3px rgba(47, 111, 144, 0.12);
+            box-shadow: 0 0 0 3px rgba(47, 111, 144, 0.13);
             outline: none;
         }
 
         .hint {
-            color: #64748b;
+            color: #66788a;
             font-size: 0.82rem;
             margin-top: 4px;
         }
@@ -117,7 +145,7 @@
             border: none;
             border-radius: 6px;
             padding: 10px 18px;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
             transition: transform 0.2s ease, background 0.2s ease;
         }
@@ -132,16 +160,16 @@
         }
 
         .btn-primary:hover {
-            background: #23415f;
+            background: #18324a;
         }
 
         .btn-secondary {
-            background: #e2e8f0;
+            background: #e8eef3;
             color: #23415f;
         }
 
         .btn-danger {
-            background: #c62828;
+            background: #d94f30;
             color: #ffffff;
             padding: 7px 12px;
             font-size: 0.85rem;
@@ -154,21 +182,41 @@
             border-radius: 6px;
             background: #e7f6ed;
             color: #166534;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .message.show {
             display: block;
         }
 
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .summary-strip div {
+            padding: 14px;
+            border-radius: 8px;
+            background: #eef6fb;
+            border-left: 5px solid #2f6f90;
+        }
+
+        .summary-strip strong {
+            display: block;
+            color: #18324a;
+            font-size: 1.4rem;
+        }
+
         .table-wrapper {
             overflow-x: auto;
+            padding: 0 20px 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 12px;
             font-size: 0.95rem;
         }
 
@@ -195,21 +243,21 @@
         .empty {
             padding: 18px 0;
             text-align: center;
-            color: #64748b;
+            color: #66788a;
             font-style: italic;
         }
 
-        @media (max-width: 700px) {
+        @media (max-width: 860px) {
+            .layout,
+            .form-grid,
+            .summary-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
             body {
                 padding: 12px;
-            }
-
-            .content {
-                padding: 18px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
             }
 
             .actions button {
@@ -219,72 +267,95 @@
     </style>
 </head>
 <body>
-    <main class="container">
+    <main class="desk">
         <div class="student-info">
-            MASV: K24DTCN000 - Ho ten: Long Nhat Nguyen
+            <span>Mã SV: K24DTCN000</span>
+            <span>Họ tên: Long Nhật Nguyễn</span>
         </div>
 
-        <div class="content">
-            <h1>Dang ky tai khoan</h1>
+        <section class="layout">
+            <section class="panel">
+                <div class="panel-header">
+                    <span>Phiếu đăng ký</span>
+                    <h1>Đăng ký tài khoản</h1>
+                </div>
 
-            <form id="accountForm" novalidate>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="fullName">Ho ten <span class="required">*</span></label>
-                        <input id="fullName" type="text" placeholder="Nhap ho ten">
-                        <div id="nameError" class="error"></div>
+                <form id="accountForm" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fullName">Họ tên <span class="required">*</span></label>
+                            <input id="fullName" type="text" placeholder="Nhập họ tên">
+                            <div id="nameError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="birthDate">Ngày sinh <span class="required">*</span></label>
+                            <input id="birthDate" type="text" placeholder="dd/mm/yyyy">
+                            <div class="hint">Dùng định dạng dd/mm/yyyy.</div>
+                            <div id="birthError" class="error"></div>
+                        </div>
+
+                        <div class="form-group full">
+                            <label for="email">Email <span class="required">*</span></label>
+                            <input id="email" type="text" placeholder="VD: sinhvien@example.com">
+                            <div id="emailError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Mật khẩu <span class="required">*</span></label>
+                            <input id="password" type="password" placeholder="Tối thiểu 6 ký tự, gồm chữ và số">
+                            <div id="passwordError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Xác nhận mật khẩu <span class="required">*</span></label>
+                            <input id="confirmPassword" type="password" placeholder="Nhập lại mật khẩu">
+                            <div id="confirmError" class="error"></div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="birthDate">Ngay sinh <span class="required">*</span></label>
-                        <input id="birthDate" type="text" placeholder="dd/mm/yyyy">
-                        <div class="hint">Dung dinh dang dd/mm/yyyy.</div>
-                        <div id="birthError" class="error"></div>
+                    <div class="actions">
+                        <button class="btn-primary" type="button" onclick="addAccount()">Đăng ký</button>
+                        <button class="btn-secondary" type="button" onclick="resetForm()">Nhập lại</button>
                     </div>
+                    <div id="message" class="message"></div>
+                </form>
+            </section>
 
-                    <div class="form-group full">
-                        <label for="email">Email <span class="required">*</span></label>
-                        <input id="email" type="text" placeholder="VD: sinhvien@example.com">
-                        <div id="emailError" class="error"></div>
+            <section class="panel">
+                <div class="panel-header">
+                    <span>Dữ liệu Web Storage</span>
+                    <h2>Danh sách tài khoản đã đăng ký</h2>
+                </div>
+
+                <div class="summary-strip">
+                    <div>
+                        <strong id="accountCount">0</strong>
+                        <span>Tài khoản đã lưu</span>
                     </div>
-
-                    <div class="form-group">
-                        <label for="password">Mat khau <span class="required">*</span></label>
-                        <input id="password" type="password" placeholder="Toi thieu 6 ky tu, gom chu va so">
-                        <div id="passwordError" class="error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirmPassword">Xac nhan mat khau <span class="required">*</span></label>
-                        <input id="confirmPassword" type="password" placeholder="Nhap lai mat khau">
-                        <div id="confirmError" class="error"></div>
+                    <div>
+                        <strong>localStorage</strong>
+                        <span>Lưu dữ liệu trên trình duyệt</span>
                     </div>
                 </div>
 
-                <div class="actions">
-                    <button class="btn-primary" type="button" onclick="addAccount()">Dang ky</button>
-                    <button class="btn-secondary" type="button" onclick="resetForm()">Nhap lai</button>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Họ tên</th>
+                                <th>Ngày sinh</th>
+                                <th>Email</th>
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountTableBody"></tbody>
+                    </table>
+                    <div id="emptyMessage" class="empty">Chưa có tài khoản nào.</div>
                 </div>
-                <div id="message" class="message"></div>
-            </form>
-
-            <h2>Danh sach tai khoan da dang ky</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Ho ten</th>
-                            <th>Ngay sinh</th>
-                            <th>Email</th>
-                            <th>Xoa</th>
-                        </tr>
-                    </thead>
-                    <tbody id="accountTableBody"></tbody>
-                </table>
-                <div id="emptyMessage" class="empty">Chua co tai khoan nao.</div>
-            </div>
-        </div>
+            </section>
+        </section>
     </main>
 
     <script>
@@ -304,11 +375,10 @@
                 return;
             }
 
-            const sample = [
-                { fullName: "Nguyen Van A", birthDate: "12/03/2004", email: "nguyenvana@example.com" },
-                { fullName: "Tran Thi B", birthDate: "25/10/2005", email: "tranthib@example.com" }
-            ];
-            saveAccounts(sample);
+            saveAccounts([
+                { fullName: "Nguyễn Văn A", birthDate: "12/03/2004", email: "nguyenvana@example.com" },
+                { fullName: "Trần Thị B", birthDate: "25/10/2005", email: "tranthib@example.com" }
+            ]);
         }
 
         function setError(id, message) {
@@ -329,10 +399,10 @@
                 return false;
             }
 
-            const parts = value.split("/");
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10);
-            const year = parseInt(parts[2], 10);
+            const [dayText, monthText, yearText] = value.split("/");
+            const day = parseInt(dayText, 10);
+            const month = parseInt(monthText, 10);
+            const year = parseInt(yearText, 10);
             const date = new Date(year, month - 1, day);
 
             return date.getFullYear() === year
@@ -344,42 +414,42 @@
             let valid = true;
 
             if (!account.fullName) {
-                setError("nameError", "Ho ten khong duoc de trong.");
+                setError("nameError", "Họ tên không được để trống.");
                 valid = false;
             }
 
             if (!account.birthDate) {
-                setError("birthError", "Ngay sinh khong duoc de trong.");
+                setError("birthError", "Ngày sinh không được để trống.");
                 valid = false;
             } else if (!isValidBirthDate(account.birthDate)) {
-                setError("birthError", "Ngay sinh phai dung dinh dang dd/mm/yyyy.");
+                setError("birthError", "Ngày sinh phải đúng định dạng dd/mm/yyyy.");
                 valid = false;
             }
 
             if (!account.email) {
-                setError("emailError", "Email khong duoc de trong.");
+                setError("emailError", "Email không được để trống.");
                 valid = false;
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email)) {
-                setError("emailError", "Email phai co dinh dang hop le va co ky tu @.");
+                setError("emailError", "Email phải có định dạng hợp lệ và có ký tự @.");
                 valid = false;
             } else if (getAccounts().some(item => item.email.toLowerCase() === account.email.toLowerCase())) {
-                setError("emailError", "Email nay da duoc dang ky.");
+                setError("emailError", "Email này đã được đăng ký.");
                 valid = false;
             }
 
             if (!account.password) {
-                setError("passwordError", "Mat khau khong duoc de trong.");
+                setError("passwordError", "Mật khẩu không được để trống.");
                 valid = false;
             } else if (account.password.length < 6 || !/[A-Za-z]/.test(account.password) || !/\d/.test(account.password)) {
-                setError("passwordError", "Mat khau toi thieu 6 ky tu va phai gom chu voi so.");
+                setError("passwordError", "Mật khẩu tối thiểu 6 ký tự và phải gồm chữ với số.");
                 valid = false;
             }
 
             if (!account.confirmPassword) {
-                setError("confirmError", "Vui long xac nhan mat khau.");
+                setError("confirmError", "Vui lòng xác nhận mật khẩu.");
                 valid = false;
             } else if (account.confirmPassword !== account.password) {
-                setError("confirmError", "Xac nhan mat khau khong trung khop.");
+                setError("confirmError", "Xác nhận mật khẩu không trùng khớp.");
                 valid = false;
             }
 
@@ -412,12 +482,12 @@
             resetForm(false);
 
             const message = document.getElementById("message");
-            message.textContent = "Dang ky tai khoan thanh cong!";
+            message.textContent = "Đăng ký tài khoản thành công!";
             message.classList.add("show");
         }
 
         function deleteAccount(index) {
-            if (!confirm("Xoa tai khoan nay?")) {
+            if (!confirm("Xóa tài khoản này?")) {
                 return;
             }
 
@@ -438,6 +508,7 @@
             const accounts = getAccounts();
             const tbody = document.getElementById("accountTableBody");
             const empty = document.getElementById("emptyMessage");
+            document.getElementById("accountCount").textContent = accounts.length;
 
             if (accounts.length === 0) {
                 tbody.innerHTML = "";
@@ -452,7 +523,7 @@
                     <td>${account.fullName}</td>
                     <td>${account.birthDate}</td>
                     <td>${account.email}</td>
-                    <td><button class="btn-danger" type="button" onclick="deleteAccount(${index})">Xoa</button></td>
+                    <td><button class="btn-danger" type="button" onclick="deleteAccount(${index})">Xóa</button></td>
                 </tr>
             `).join("");
         }

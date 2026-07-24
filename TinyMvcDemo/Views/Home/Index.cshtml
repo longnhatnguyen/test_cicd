@@ -1,94 +1,89 @@
 @model TinyMvcDemo.Models.HomePageViewModel
 @{
-    ViewData["Title"] = "On tap LTW 2026";
+    ViewData["Title"] = "Ôn tập LTW 2026";
 }
 
 <section class="study-shell">
-    <div class="study-hero">
-        <div>
-            <span class="study-badge">On tap Lap trinh Web 2026</span>
-            <h1>Bo bai lam day du theo de on tap</h1>
+    <section class="study-hero">
+        <div class="hero-copy">
+            <span class="study-badge">LTW 2026 Personal Lab</span>
+            <h1>Bộ bài ôn tập có preview và source tải nhanh</h1>
             <p>
-                Chon tung cau de xem ket qua truc tiep, mo file HTML rieng hoac tai source cua dung cau do.
-                Cac bai deu dung HTML, CSS, JavaScript thuan va localStorage theo yeu cau de.
+                Mỗi câu là một trang HTML độc lập, có CSS và JavaScript nhúng trực tiếp đúng yêu cầu đề.
+                Chọn bài bên dưới để xem kết quả ngay, mở tab riêng hoặc tải source của đúng bài đó.
             </p>
         </div>
 
         <div class="status-panel">
-            <span>Dang online</span>
+            <span>Trạng thái server</span>
             <strong id="clock-live">--:--:--</strong>
-            <small id="clock-date">Dang dong bo ngay...</small>
+            <small id="clock-date">Đang đồng bộ ngày...</small>
+            <a asp-controller="Download" asp-action="Source" asp-route-id="all">Tải toàn bộ source</a>
         </div>
-    </div>
-
-    <div class="quick-actions">
-        <a class="action-button download" asp-controller="Download" asp-action="Source" asp-route-id="all">
-            Tai tat ca source .zip
-        </a>
-    </div>
+    </section>
 
     <div class="assignment-grid" id="assignment-list">
         <button class="assignment-card is-active" type="button"
-                data-title="Cau 1 - Gioi thieu ca nhan"
-                data-summary="Trang co anh dai dien, ho ten, loi chao, so thich, lien ket mang xa hoi, hover link va ngay he thong bang JavaScript."
+                data-title="Câu 1 - Hồ sơ cá nhân"
+                data-summary="Có ảnh đại diện, họ tên, lời chào, sở thích, mạng xã hội, hiệu ứng hover, xử lý DOM và ngày hệ thống bằng JavaScript."
                 data-preview="/ontap/LONGNHATNGUYEN_CAU1.html"
                 data-download="/Download/Source?id=cau1">
-            <span class="assignment-number">Cau 1</span>
-            <strong>Gioi thieu ca nhan</strong>
-            <small>Flex/grid, responsive, link hover, ngay he thong.</small>
+            <span class="assignment-number">Câu 1</span>
+            <strong>Hồ sơ cá nhân</strong>
+            <small>Trang giới thiệu giống một thẻ portfolio nhỏ, có lời chào đổi bằng JavaScript.</small>
         </button>
 
         <button class="assignment-card" type="button"
-                data-title="Cau 2 - Dang 1: Dang ky tai khoan"
-                data-summary="Form gom ho ten, ngay sinh dd/mm/yyyy, email, mat khau, xac nhan mat khau; validate loi, luu Web Storage va hien thi bang."
+                data-title="Câu 2 - Dạng 1: Đăng ký tài khoản"
+                data-summary="Form gồm họ tên, ngày sinh dd/mm/yyyy, email, mật khẩu, xác nhận mật khẩu; kiểm tra lỗi, lưu localStorage và hiển thị bảng."
                 data-preview="/ontap/LONGNHATNGUYEN_CAU2_DANG1.html"
                 data-download="/Download/Source?id=cau2-dang1">
-            <span class="assignment-number">Cau 2 - Dang 1</span>
-            <strong>Dang ky tai khoan</strong>
-            <small>Validate email, ngay sinh, mat khau va localStorage.</small>
+            <span class="assignment-number">Câu 2 - Dạng 1</span>
+            <strong>Đăng ký tài khoản</strong>
+            <small>Giao diện như bàn tiếp nhận hồ sơ, có thống kê số tài khoản đã lưu.</small>
         </button>
 
         <button class="assignment-card" type="button"
-                data-title="Cau 2 - Dang 2: Quan ly san pham"
-                data-summary="Form gom ma san pham 8 chu so, ten san pham toi da 300 ky tu, so luong, don gia, chung loai; validate, luu Web Storage va hien thi bang."
+                data-title="Câu 2 - Dạng 2: Quản lý sản phẩm"
+                data-summary="Form gồm mã sản phẩm 8 chữ số, tên tối đa 300 ký tự, số lượng, đơn giá, chủng loại; kiểm tra lỗi, lưu localStorage và hiển thị bảng."
                 data-preview="/ontap/LONGNHATNGUYEN_CAU2.html"
                 data-download="/Download/Source?id=cau2-dang2">
-            <span class="assignment-number">Cau 2 - Dang 2</span>
-            <strong>Quan ly san pham</strong>
-            <small>Validate ma san pham, so luong, don gia va localStorage.</small>
+            <span class="assignment-number">Câu 2 - Dạng 2</span>
+            <strong>Quản lý sản phẩm</strong>
+            <small>Bảng kho nhỏ có tổng tiền, dữ liệu mẫu, validate rõ ngay dưới từng trường.</small>
         </button>
     </div>
 
     <section class="result-panel">
         <div class="result-header">
             <div>
-                <span class="study-badge muted">Ket qua dang xem</span>
-                <h2 id="result-title">Cau 1 - Gioi thieu ca nhan</h2>
+                <span class="study-badge muted">Kết quả đang xem</span>
+                <h2 id="result-title">Câu 1 - Hồ sơ cá nhân</h2>
                 <p id="result-summary">
-                    Trang co anh dai dien, ho ten, loi chao, so thich, lien ket mang xa hoi, hover link va ngay he thong bang JavaScript.
+                    Có ảnh đại diện, họ tên, lời chào, sở thích, mạng xã hội, hiệu ứng hover, xử lý DOM và ngày hệ thống bằng JavaScript.
                 </p>
             </div>
 
             <div class="result-actions">
                 <a id="open-result" class="action-button primary" href="/ontap/LONGNHATNGUYEN_CAU1.html" target="_blank" rel="noopener">
-                    Mo rieng
+                    Mở tab riêng
                 </a>
                 <a id="download-result" class="action-button download" href="/Download/Source?id=cau1">
-                    Tai source cau nay
+                    Tải source câu này
                 </a>
             </div>
         </div>
 
-        <iframe id="result-frame" title="Ket qua bai lam" src="/ontap/LONGNHATNGUYEN_CAU1.html"></iframe>
+        <iframe id="result-frame" title="Kết quả bài làm" src="/ontap/LONGNHATNGUYEN_CAU1.html"></iframe>
     </section>
 
-    <div class="deploy-card">
-        <h2>Thong tin deploy hien tai</h2>
+    <section class="deploy-card">
+        <h2>Thông tin deploy hiện tại</h2>
         <div class="deploy-table">
             <div><span>Commit</span><code>@Model.Commit</code></div>
             <div><span>Build number</span><code>@Model.BuildNumber</code></div>
             <div><span>Deployed at</span><code>@Model.DeployedAt</code></div>
             <div><span>Environment</span><code>@Model.EnvironmentName</code></div>
         </div>
-    </div>
+    </section>
 </section>

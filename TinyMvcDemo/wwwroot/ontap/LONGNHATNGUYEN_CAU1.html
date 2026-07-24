@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cau 1 - Gioi thieu ca nhan</title>
+    <title>Câu 1 - Hồ sơ cá nhân</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,77 +14,87 @@
         body {
             min-height: 100vh;
             font-family: "Segoe UI", Tahoma, sans-serif;
-            background: linear-gradient(135deg, #f5efe6 0%, #dfeeea 48%, #d9e2f3 100%);
-            color: #1f2933;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            background:
+                linear-gradient(90deg, rgba(38, 50, 56, 0.05) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(38, 50, 56, 0.05) 1px, transparent 1px),
+                #fffaf1;
+            background-size: 26px 26px;
+            color: #1d262d;
+            padding: 26px;
         }
 
         .profile {
-            width: min(100%, 1040px);
+            width: min(100%, 1060px);
+            min-height: calc(100vh - 52px);
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 28px;
+            grid-template-columns: 330px 1fr;
+            gap: 22px;
             align-items: stretch;
         }
 
-        .profile-card,
-        .content-card {
-            background: rgba(255, 255, 255, 0.88);
-            border: 1px solid rgba(31, 41, 51, 0.08);
+        .identity,
+        .notebook {
+            border: 1px solid #d8c7ad;
             border-radius: 8px;
-            box-shadow: 0 18px 45px rgba(31, 41, 51, 0.12);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 18px 40px rgba(29, 38, 45, 0.12);
         }
 
-        .profile-card {
+        .identity {
+            display: grid;
+            align-content: center;
+            gap: 18px;
             padding: 28px;
             text-align: center;
+            border-top: 8px solid #d84f35;
         }
 
         .avatar {
-            width: 160px;
-            height: 160px;
+            width: 170px;
+            height: 170px;
+            margin: 0 auto;
             border-radius: 50%;
-            object-fit: cover;
-            border: 6px solid #ffffff;
-            box-shadow: 0 12px 30px rgba(41, 74, 92, 0.2);
-            margin-bottom: 18px;
+            border: 7px solid #ffffff;
+            box-shadow: 0 12px 28px rgba(39, 91, 74, 0.2);
         }
 
         h1 {
+            color: #17242c;
             font-size: 2rem;
-            color: #18324a;
-            margin-bottom: 8px;
+            line-height: 1.1;
         }
 
         .student-code {
-            display: inline-block;
-            padding: 7px 12px;
-            background: #e4f2ef;
-            color: #155b4f;
+            width: fit-content;
+            margin: 0 auto;
+            padding: 8px 12px;
             border-radius: 999px;
-            font-weight: 700;
-            font-size: 0.9rem;
+            background: #e4f4eb;
+            color: #22543d;
+            font-weight: 800;
         }
 
-        .content-card {
-            padding: 32px;
+        .notebook {
+            display: grid;
+            align-content: center;
+            gap: 22px;
+            padding: 34px;
+            border-top: 8px solid #2f7f86;
         }
 
         .hello {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            margin-bottom: 24px;
+            max-width: 760px;
+            font-size: 1.16rem;
+            line-height: 1.75;
         }
 
         .section-title {
-            font-size: 1rem;
-            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+            color: #7a4d00;
+            font-size: 0.9rem;
+            font-weight: 900;
             text-transform: uppercase;
-            color: #486581;
-            margin: 22px 0 12px;
         }
 
         .hobby-grid {
@@ -97,9 +107,9 @@
         .hobby-grid li {
             padding: 14px;
             border-radius: 8px;
-            background: #f7fafc;
-            border: 1px solid #d9e2ec;
-            font-weight: 600;
+            background: #f7f0e3;
+            border-left: 5px solid #e9a93f;
+            font-weight: 700;
         }
 
         .links {
@@ -108,35 +118,39 @@
             gap: 12px;
         }
 
-        .links a {
-            color: #ffffff;
-            background: #1f6f78;
-            text-decoration: none;
-            padding: 11px 16px;
+        .links a,
+        .greeting-button {
+            border: none;
             border-radius: 6px;
-            font-weight: 700;
+            padding: 11px 16px;
+            color: #ffffff;
+            background: #2f6f4e;
+            text-decoration: none;
+            font-weight: 800;
+            cursor: pointer;
             transition: transform 0.2s ease, background 0.2s ease;
         }
 
-        .links a:hover {
-            background: #18324a;
+        .links a:hover,
+        .greeting-button:hover {
+            background: #d84f35;
             transform: translateY(-2px);
         }
 
         .today {
-            margin-top: 24px;
             padding: 14px;
-            border-left: 4px solid #1f6f78;
-            background: #eef7f5;
-            border-radius: 6px;
-            font-weight: 700;
+            border-radius: 8px;
+            background: #edf7f5;
+            border: 1px solid #c5ded9;
+            font-weight: 800;
         }
 
         @media (max-width: 760px) {
-            .profile {
-                grid-template-columns: 1fr;
+            body {
+                padding: 14px;
             }
 
+            .profile,
             .hobby-grid {
                 grid-template-columns: 1fr;
             }
@@ -145,38 +159,55 @@
 </head>
 <body>
     <main class="profile">
-        <aside class="profile-card">
-            <img class="avatar" alt="Anh dai dien" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23dfeeea'/%3E%3Ccircle cx='150' cy='110' r='58' fill='%231f6f78'/%3E%3Cpath d='M55 278c16-68 64-103 95-103s79 35 95 103' fill='%2318324a'/%3E%3Ctext x='150' y='285' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3ELTW%3C/text%3E%3C/svg%3E">
-            <h1>Long Nhat Nguyen</h1>
-            <span class="student-code">MASV: K24DTCN000</span>
+        <aside class="identity">
+            <img class="avatar" alt="Ảnh đại diện" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Crect width='320' height='320' rx='160' fill='%23f7f0e3'/%3E%3Ccircle cx='160' cy='112' r='62' fill='%232f7f86'/%3E%3Cpath d='M58 292c18-75 70-112 102-112s84 37 102 112' fill='%231d262d'/%3E%3Cpath d='M88 61l42 22 30-39 31 39 42-22-13 48 42 21-48 9 4 49-58-29-58 29 4-49-48-9 42-21z' fill='%23e9a93f' opacity='.9'/%3E%3Ctext x='160' y='286' text-anchor='middle' font-family='Arial' font-size='28' font-weight='700' fill='white'%3ELTW%3C/text%3E%3C/svg%3E">
+            <h1>Long Nhật Nguyễn</h1>
+            <span class="student-code">Mã SV: K24DTCN000</span>
         </aside>
 
-        <section class="content-card">
-            <p class="hello">
-                Xin chao! Minh la sinh vien dang on tap mon Lap trinh Web. Minh quan tam den phat trien ung dung web,
-                giao dien gon gang va cach JavaScript giup trang web tro nen tuong tac hon.
+        <section class="notebook">
+            <p id="greeting" class="hello">
+                Xin chào! Mình đang ôn tập Lập trình Web và thích biến những bài HTML nhỏ thành các giao diện có cá tính,
+                dễ đọc, dễ kiểm tra và vẫn đúng yêu cầu kỹ thuật.
             </p>
 
-            <h2 class="section-title">So thich</h2>
-            <ul class="hobby-grid">
-                <li>Lap trinh web va Docker</li>
-                <li>Doc tai lieu cong nghe</li>
-                <li>Thiet ke giao dien don gian</li>
-                <li>Thu nghiem CI/CD voi GitHub Actions</li>
-            </ul>
-
-            <h2 class="section-title">Mang xa hoi</h2>
-            <div class="links">
-                <a href="https://github.com/longnhatnguyen" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
-                <a href="mailto:student@example.com">Email</a>
+            <div>
+                <h2 class="section-title">Sở thích</h2>
+                <ul class="hobby-grid">
+                    <li>Lập trình web và Docker</li>
+                    <li>Ghi chú bài học thật gọn</li>
+                    <li>Thiết kế giao diện có điểm nhấn</li>
+                    <li>Thử nghiệm CI/CD với GitHub Actions</li>
+                </ul>
             </div>
 
-            <div id="today" class="today">Dang tai ngay he thong...</div>
+            <div>
+                <h2 class="section-title">Liên kết</h2>
+                <div class="links">
+                    <a href="https://github.com/longnhatnguyen" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+                    <a href="mailto:student@example.com">Email</a>
+                    <button class="greeting-button" type="button" onclick="changeGreeting()">Đổi lời chào</button>
+                </div>
+            </div>
+
+            <div id="today" class="today">Đang tải ngày hệ thống...</div>
         </section>
     </main>
 
     <script>
+        const greetings = [
+            "Xin chào! Mình đang ôn tập Lập trình Web và thích biến những bài HTML nhỏ thành các giao diện có cá tính, dễ đọc, dễ kiểm tra và vẫn đúng yêu cầu kỹ thuật.",
+            "Chào bạn đến với góc học tập của mình. Mỗi dòng HTML, CSS và JavaScript ở đây đều được viết để luyện kỹ năng làm bài thi thật chắc.",
+            "Mình thích học web theo cách nhìn thấy kết quả ngay: sửa giao diện, kiểm tra form, lưu dữ liệu và tự deploy bằng CI/CD."
+        ];
+        let greetingIndex = 0;
+
+        function changeGreeting() {
+            greetingIndex = (greetingIndex + 1) % greetings.length;
+            document.getElementById("greeting").textContent = greetings[greetingIndex];
+        }
+
         const today = new Date();
         const formatter = new Intl.DateTimeFormat("vi-VN", {
             weekday: "long",
@@ -185,7 +216,7 @@
             year: "numeric"
         });
 
-        document.getElementById("today").textContent = "Hom nay la: " + formatter.format(today);
+        document.getElementById("today").textContent = "Hôm nay là: " + formatter.format(today);
     </script>
 </body>
 </html>

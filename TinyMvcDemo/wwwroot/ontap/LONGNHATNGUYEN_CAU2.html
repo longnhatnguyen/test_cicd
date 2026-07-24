@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cau 2 - Quan ly san pham</title>
+    <title>Câu 2 - Quản lý sản phẩm</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,35 +14,63 @@
         body {
             min-height: 100vh;
             font-family: "Segoe UI", Tahoma, sans-serif;
-            background: #edf3f1;
+            background:
+                linear-gradient(90deg, rgba(39, 91, 74, 0.05) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(39, 91, 74, 0.05) 1px, transparent 1px),
+                #f8fbf6;
+            background-size: 28px 28px;
             color: #21313c;
             padding: 24px;
         }
 
-        .container {
-            width: min(100%, 1100px);
+        .warehouse {
+            width: min(100%, 1160px);
             margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 16px 36px rgba(33, 49, 60, 0.12);
-            overflow: hidden;
         }
 
         .student-info {
-            background: #18324a;
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 16px 18px;
+            border-radius: 8px;
+            background: #20352b;
             color: #ffffff;
-            padding: 18px 24px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        .content {
-            padding: 24px;
+        .dashboard {
+            display: grid;
+            grid-template-columns: 390px 1fr;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border: 1px solid #d7e2d9;
+            border-radius: 8px;
+            box-shadow: 0 14px 32px rgba(33, 49, 60, 0.1);
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e2eadf;
+        }
+
+        .panel-header span {
+            display: inline-block;
+            margin-bottom: 8px;
+            color: #2f6f4e;
+            font-size: 0.82rem;
+            font-weight: 900;
+            text-transform: uppercase;
         }
 
         h1,
         h2 {
-            color: #18324a;
-            margin-bottom: 16px;
+            color: #20352b;
         }
 
         h1 {
@@ -50,36 +78,32 @@
         }
 
         h2 {
-            font-size: 1.25rem;
-            margin-top: 28px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+            font-size: 1.2rem;
+        }
+
+        form {
+            padding: 20px;
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px 20px;
-        }
-
-        .form-group.full {
-            grid-column: 1 / -1;
+            gap: 14px;
         }
 
         label {
             display: block;
             margin-bottom: 6px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .required {
-            color: #c62828;
+            color: #d94f30;
         }
 
         input,
         select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 11px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 1rem;
@@ -90,13 +114,13 @@
         select:hover,
         input:focus,
         select:focus {
-            border-color: #1f6f78;
-            box-shadow: 0 0 0 3px rgba(31, 111, 120, 0.12);
+            border-color: #2f6f4e;
+            box-shadow: 0 0 0 3px rgba(47, 111, 78, 0.13);
             outline: none;
         }
 
         .hint {
-            color: #64748b;
+            color: #65746a;
             font-size: 0.82rem;
             margin-top: 4px;
         }
@@ -119,7 +143,7 @@
             border: none;
             border-radius: 6px;
             padding: 10px 18px;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
             transition: transform 0.2s ease, background 0.2s ease;
         }
@@ -129,21 +153,21 @@
         }
 
         .btn-primary {
-            background: #1f6f78;
+            background: #2f6f4e;
             color: #ffffff;
         }
 
         .btn-primary:hover {
-            background: #18324a;
+            background: #20352b;
         }
 
         .btn-secondary {
-            background: #e2e8f0;
-            color: #18324a;
+            background: #edf3ea;
+            color: #20352b;
         }
 
         .btn-danger {
-            background: #c62828;
+            background: #d94f30;
             color: #ffffff;
             padding: 7px 12px;
             font-size: 0.85rem;
@@ -156,26 +180,46 @@
             border-radius: 6px;
             background: #e7f6ed;
             color: #166534;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .message.show {
             display: block;
         }
 
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .stats div {
+            padding: 14px;
+            border-radius: 8px;
+            background: #f4f1e8;
+            border-left: 5px solid #e9a93f;
+        }
+
+        .stats strong {
+            display: block;
+            color: #20352b;
+            font-size: 1.3rem;
+        }
+
         .table-wrapper {
             overflow-x: auto;
+            padding: 0 20px 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 12px;
             font-size: 0.95rem;
         }
 
         th {
-            background: #18324a;
+            background: #20352b;
             color: #ffffff;
             padding: 10px;
             text-align: left;
@@ -191,27 +235,26 @@
         }
 
         tr:hover {
-            background: #eef7f5;
+            background: #f0f7ef;
         }
 
         .empty {
             padding: 18px 0;
             text-align: center;
-            color: #64748b;
+            color: #65746a;
             font-style: italic;
         }
 
-        @media (max-width: 700px) {
+        @media (max-width: 920px) {
+            .dashboard,
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
             body {
                 padding: 12px;
-            }
-
-            .content {
-                padding: 18px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
             }
 
             .actions button {
@@ -221,83 +264,110 @@
     </style>
 </head>
 <body>
-    <main class="container">
+    <main class="warehouse">
         <div class="student-info">
-            MASV: K24DTCN000 - Ho ten: Long Nhat Nguyen
+            <span>Mã SV: K24DTCN000</span>
+            <span>Họ tên: Long Nhật Nguyễn</span>
         </div>
 
-        <div class="content">
-            <h1>Quan ly san pham</h1>
+        <section class="dashboard">
+            <section class="panel">
+                <div class="panel-header">
+                    <span>Phiếu nhập kho</span>
+                    <h1>Quản lý sản phẩm</h1>
+                </div>
 
-            <form id="productForm" novalidate>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="productCode">Ma san pham <span class="required">*</span></label>
-                        <input id="productCode" type="text" maxlength="8" placeholder="VD: 12345678">
-                        <div class="hint">Bat buoc la 8 chu so va khong duoc trung.</div>
-                        <div id="codeError" class="error"></div>
+                <form id="productForm" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="productCode">Mã sản phẩm <span class="required">*</span></label>
+                            <input id="productCode" type="text" maxlength="8" placeholder="VD: 12345678">
+                            <div class="hint">Bắt buộc là 8 chữ số và không được trùng.</div>
+                            <div id="codeError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productName">Tên sản phẩm <span class="required">*</span></label>
+                            <input id="productName" type="text" maxlength="300" placeholder="Nhập tên sản phẩm">
+                            <div class="hint"><span id="nameCount">0</span> / 300 ký tự</div>
+                            <div id="nameError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Số lượng <span class="required">*</span></label>
+                            <input id="quantity" type="number" min="1" step="1" placeholder="VD: 10">
+                            <div id="quantityError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price">Đơn giá <span class="required">*</span></label>
+                            <input id="price" type="number" min="1" step="1" placeholder="VD: 250000">
+                            <div id="priceError" class="error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Chủng loại <span class="required">*</span></label>
+                            <select id="category">
+                                <option value="">-- Chọn chủng loại --</option>
+                                <option value="Điện tử">Điện tử</option>
+                                <option value="Gia dụng">Gia dụng</option>
+                                <option value="Thời trang">Thời trang</option>
+                                <option value="Văn phòng phẩm">Văn phòng phẩm</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                            <div id="categoryError" class="error"></div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="category">Chung loai <span class="required">*</span></label>
-                        <select id="category">
-                            <option value="">-- Chon chung loai --</option>
-                            <option value="Dien tu">Dien tu</option>
-                            <option value="Gia dung">Gia dung</option>
-                            <option value="Thoi trang">Thoi trang</option>
-                            <option value="Van phong pham">Van phong pham</option>
-                            <option value="Khac">Khac</option>
-                        </select>
-                        <div id="categoryError" class="error"></div>
+                    <div class="actions">
+                        <button class="btn-primary" type="button" onclick="addProduct()">Thêm sản phẩm</button>
+                        <button class="btn-secondary" type="button" onclick="resetForm()">Nhập lại</button>
                     </div>
+                    <div id="message" class="message"></div>
+                </form>
+            </section>
 
-                    <div class="form-group full">
-                        <label for="productName">Ten san pham <span class="required">*</span></label>
-                        <input id="productName" type="text" maxlength="300" placeholder="Nhap ten san pham">
-                        <div class="hint"><span id="nameCount">0</span> / 300 ky tu</div>
-                        <div id="nameError" class="error"></div>
+            <section class="panel">
+                <div class="panel-header">
+                    <span>Bảng theo dõi</span>
+                    <h2>Danh sách sản phẩm đã nhập</h2>
+                </div>
+
+                <div class="stats">
+                    <div>
+                        <strong id="productCount">0</strong>
+                        <span>Sản phẩm</span>
                     </div>
-
-                    <div class="form-group">
-                        <label for="quantity">So luong <span class="required">*</span></label>
-                        <input id="quantity" type="number" min="1" step="1" placeholder="VD: 10">
-                        <div id="quantityError" class="error"></div>
+                    <div>
+                        <strong id="stockCount">0</strong>
+                        <span>Tổng số lượng</span>
                     </div>
-
-                    <div class="form-group">
-                        <label for="price">Don gia <span class="required">*</span></label>
-                        <input id="price" type="number" min="1" step="1" placeholder="VD: 250000">
-                        <div id="priceError" class="error"></div>
+                    <div>
+                        <strong id="stockValue">0 VND</strong>
+                        <span>Tổng giá trị</span>
                     </div>
                 </div>
 
-                <div class="actions">
-                    <button class="btn-primary" type="button" onclick="addProduct()">Them san pham</button>
-                    <button class="btn-secondary" type="button" onclick="resetForm()">Nhap lai</button>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã SP</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Số lượng</th>
+                                <th>Đơn giá</th>
+                                <th>Chủng loại</th>
+                                <th>Thành tiền</th>
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                    <div id="emptyMessage" class="empty">Chưa có sản phẩm nào.</div>
                 </div>
-                <div id="message" class="message"></div>
-            </form>
-
-            <h2>Danh sach san pham da nhap</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Ma SP</th>
-                            <th>Ten san pham</th>
-                            <th>So luong</th>
-                            <th>Don gia</th>
-                            <th>Chung loai</th>
-                            <th>Thanh tien</th>
-                            <th>Xoa</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody"></tbody>
-                </table>
-                <div id="emptyMessage" class="empty">Chua co san pham nao.</div>
-            </div>
-        </div>
+            </section>
+        </section>
     </main>
 
     <script>
@@ -317,11 +387,10 @@
                 return;
             }
 
-            const sample = [
-                { code: "12345678", name: "Ban phim co", quantity: 5, price: 650000, category: "Dien tu" },
-                { code: "87654321", name: "Binh giu nhiet", quantity: 12, price: 180000, category: "Gia dung" }
-            ];
-            saveProducts(sample);
+            saveProducts([
+                { code: "12345678", name: "Bàn phím cơ", quantity: 5, price: 650000, category: "Điện tử" },
+                { code: "87654321", name: "Bình giữ nhiệt", quantity: 12, price: 180000, category: "Gia dụng" }
+            ]);
         }
 
         function setError(id, message) {
@@ -346,36 +415,36 @@
             const products = getProducts();
 
             if (!product.code) {
-                setError("codeError", "Ma san pham khong duoc de trong.");
+                setError("codeError", "Mã sản phẩm không được để trống.");
                 valid = false;
             } else if (!/^\d{8}$/.test(product.code)) {
-                setError("codeError", "Ma san pham phai gom dung 8 chu so.");
+                setError("codeError", "Mã sản phẩm phải gồm đúng 8 chữ số.");
                 valid = false;
             } else if (products.some(item => item.code === product.code)) {
-                setError("codeError", "Ma san pham da ton tai.");
+                setError("codeError", "Mã sản phẩm đã tồn tại.");
                 valid = false;
             }
 
             if (!product.name) {
-                setError("nameError", "Ten san pham khong duoc de trong.");
+                setError("nameError", "Tên sản phẩm không được để trống.");
                 valid = false;
             } else if (product.name.length > 300) {
-                setError("nameError", "Ten san pham toi da 300 ky tu.");
+                setError("nameError", "Tên sản phẩm tối đa 300 ký tự.");
                 valid = false;
             }
 
             if (!isPositiveInteger(product.quantityText)) {
-                setError("quantityError", "So luong phai la so nguyen lon hon 0.");
+                setError("quantityError", "Số lượng phải là số nguyên lớn hơn 0.");
                 valid = false;
             }
 
             if (!isPositiveInteger(product.priceText)) {
-                setError("priceError", "Don gia phai la so nguyen lon hon 0.");
+                setError("priceError", "Đơn giá phải là số nguyên lớn hơn 0.");
                 valid = false;
             }
 
             if (!product.category) {
-                setError("categoryError", "Vui long chon chung loai.");
+                setError("categoryError", "Vui lòng chọn chủng loại.");
                 valid = false;
             }
 
@@ -410,12 +479,12 @@
             resetForm(false);
 
             const message = document.getElementById("message");
-            message.textContent = "Them san pham thanh cong!";
+            message.textContent = "Thêm sản phẩm thành công!";
             message.classList.add("show");
         }
 
         function deleteProduct(index) {
-            if (!confirm("Xoa san pham nay?")) {
+            if (!confirm("Xóa sản phẩm này?")) {
                 return;
             }
 
@@ -441,6 +510,12 @@
             const products = getProducts();
             const tbody = document.getElementById("productTableBody");
             const empty = document.getElementById("emptyMessage");
+            const totalQuantity = products.reduce((sum, product) => sum + product.quantity, 0);
+            const totalValue = products.reduce((sum, product) => sum + product.quantity * product.price, 0);
+
+            document.getElementById("productCount").textContent = products.length;
+            document.getElementById("stockCount").textContent = totalQuantity;
+            document.getElementById("stockValue").textContent = formatMoney(totalValue);
 
             if (products.length === 0) {
                 tbody.innerHTML = "";
@@ -460,7 +535,7 @@
                         <td>${formatMoney(product.price)}</td>
                         <td>${product.category}</td>
                         <td>${formatMoney(total)}</td>
-                        <td><button class="btn-danger" type="button" onclick="deleteProduct(${index})">Xoa</button></td>
+                        <td><button class="btn-danger" type="button" onclick="deleteProduct(${index})">Xóa</button></td>
                     </tr>
                 `;
             }).join("");
