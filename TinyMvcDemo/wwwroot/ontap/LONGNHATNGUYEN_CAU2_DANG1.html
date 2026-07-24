@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cau 2 Dang 1 - Dang ky tai khoan</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f2f6fb;
+            color: #203040;
+            padding: 24px;
+        }
+
+        .container {
+            width: min(100%, 1080px);
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #d9e2ec;
+            box-shadow: 0 16px 36px rgba(32, 48, 64, 0.12);
+            overflow: hidden;
+        }
+
+        .student-info {
+            background: #23415f;
+            color: #ffffff;
+            padding: 18px 24px;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        h1,
+        h2 {
+            color: #23415f;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 28px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 20px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .required {
+            color: #c62828;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:hover,
+        input:focus {
+            border-color: #2f6f90;
+            box-shadow: 0 0 0 3px rgba(47, 111, 144, 0.12);
+            outline: none;
+        }
+
+        .hint {
+            color: #64748b;
+            font-size: 0.82rem;
+            margin-top: 4px;
+        }
+
+        .error {
+            min-height: 18px;
+            margin-top: 4px;
+            color: #c62828;
+            font-size: 0.85rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: #2f6f90;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #23415f;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #23415f;
+        }
+
+        .btn-danger {
+            background: #c62828;
+            color: #ffffff;
+            padding: 7px 12px;
+            font-size: 0.85rem;
+        }
+
+        .message {
+            display: none;
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #e7f6ed;
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background: #23415f;
+            color: #ffffff;
+            padding: 10px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        tr:hover {
+            background: #eef6fb;
+        }
+
+        .empty {
+            padding: 18px 0;
+            text-align: center;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 12px;
+            }
+
+            .content {
+                padding: 18px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="student-info">
+            MASV: K24DTCN000 - Ho ten: Long Nhat Nguyen
+        </div>
+
+        <div class="content">
+            <h1>Dang ky tai khoan</h1>
+
+            <form id="accountForm" novalidate>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fullName">Ho ten <span class="required">*</span></label>
+                        <input id="fullName" type="text" placeholder="Nhap ho ten">
+                        <div id="nameError" class="error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="birthDate">Ngay sinh <span class="required">*</span></label>
+                        <input id="birthDate" type="text" placeholder="dd/mm/yyyy">
+                        <div class="hint">Dung dinh dang dd/mm/yyyy.</div>
+                        <div id="birthError" class="error"></div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input id="email" type="text" placeholder="VD: sinhvien@example.com">
+                        <div id="emailError" class="error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Mat khau <span class="required">*</span></label>
+                        <input id="password" type="password" placeholder="Toi thieu 6 ky tu, gom chu va so">
+                        <div id="passwordError" class="error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Xac nhan mat khau <span class="required">*</span></label>
+                        <input id="confirmPassword" type="password" placeholder="Nhap lai mat khau">
+                        <div id="confirmError" class="error"></div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn-primary" type="button" onclick="addAccount()">Dang ky</button>
+                    <button class="btn-secondary" type="button" onclick="resetForm()">Nhap lai</button>
+                </div>
+                <div id="message" class="message"></div>
+            </form>
+
+            <h2>Danh sach tai khoan da dang ky</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Ho ten</th>
+                            <th>Ngay sinh</th>
+                            <th>Email</th>
+                            <th>Xoa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountTableBody"></tbody>
+                </table>
+                <div id="emptyMessage" class="empty">Chua co tai khoan nao.</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const storageKey = "ltw_accounts";
+
+        function getAccounts() {
+            const data = localStorage.getItem(storageKey);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveAccounts(accounts) {
+            localStorage.setItem(storageKey, JSON.stringify(accounts));
+        }
+
+        function initAccounts() {
+            if (localStorage.getItem(storageKey)) {
+                return;
+            }
+
+            const sample = [
+                { fullName: "Nguyen Van A", birthDate: "12/03/2004", email: "nguyenvana@example.com" },
+                { fullName: "Tran Thi B", birthDate: "25/10/2005", email: "tranthib@example.com" }
+            ];
+            saveAccounts(sample);
+        }
+
+        function setError(id, message) {
+            document.getElementById(id).textContent = message;
+        }
+
+        function clearErrors() {
+            document.querySelectorAll(".error").forEach(error => {
+                error.textContent = "";
+            });
+            const message = document.getElementById("message");
+            message.classList.remove("show");
+            message.textContent = "";
+        }
+
+        function isValidBirthDate(value) {
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+                return false;
+            }
+
+            const parts = value.split("/");
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            const date = new Date(year, month - 1, day);
+
+            return date.getFullYear() === year
+                && date.getMonth() === month - 1
+                && date.getDate() === day;
+        }
+
+        function validateAccount(account) {
+            let valid = true;
+
+            if (!account.fullName) {
+                setError("nameError", "Ho ten khong duoc de trong.");
+                valid = false;
+            }
+
+            if (!account.birthDate) {
+                setError("birthError", "Ngay sinh khong duoc de trong.");
+                valid = false;
+            } else if (!isValidBirthDate(account.birthDate)) {
+                setError("birthError", "Ngay sinh phai dung dinh dang dd/mm/yyyy.");
+                valid = false;
+            }
+
+            if (!account.email) {
+                setError("emailError", "Email khong duoc de trong.");
+                valid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email)) {
+                setError("emailError", "Email phai co dinh dang hop le va co ky tu @.");
+                valid = false;
+            } else if (getAccounts().some(item => item.email.toLowerCase() === account.email.toLowerCase())) {
+                setError("emailError", "Email nay da duoc dang ky.");
+                valid = false;
+            }
+
+            if (!account.password) {
+                setError("passwordError", "Mat khau khong duoc de trong.");
+                valid = false;
+            } else if (account.password.length < 6 || !/[A-Za-z]/.test(account.password) || !/\d/.test(account.password)) {
+                setError("passwordError", "Mat khau toi thieu 6 ky tu va phai gom chu voi so.");
+                valid = false;
+            }
+
+            if (!account.confirmPassword) {
+                setError("confirmError", "Vui long xac nhan mat khau.");
+                valid = false;
+            } else if (account.confirmPassword !== account.password) {
+                setError("confirmError", "Xac nhan mat khau khong trung khop.");
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        function addAccount() {
+            clearErrors();
+
+            const account = {
+                fullName: document.getElementById("fullName").value.trim(),
+                birthDate: document.getElementById("birthDate").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                password: document.getElementById("password").value,
+                confirmPassword: document.getElementById("confirmPassword").value
+            };
+
+            if (!validateAccount(account)) {
+                return;
+            }
+
+            const accounts = getAccounts();
+            accounts.push({
+                fullName: account.fullName,
+                birthDate: account.birthDate,
+                email: account.email
+            });
+            saveAccounts(accounts);
+            renderAccounts();
+            resetForm(false);
+
+            const message = document.getElementById("message");
+            message.textContent = "Dang ky tai khoan thanh cong!";
+            message.classList.add("show");
+        }
+
+        function deleteAccount(index) {
+            if (!confirm("Xoa tai khoan nay?")) {
+                return;
+            }
+
+            const accounts = getAccounts();
+            accounts.splice(index, 1);
+            saveAccounts(accounts);
+            renderAccounts();
+        }
+
+        function resetForm(clearMessage = true) {
+            document.getElementById("accountForm").reset();
+            if (clearMessage) {
+                clearErrors();
+            }
+        }
+
+        function renderAccounts() {
+            const accounts = getAccounts();
+            const tbody = document.getElementById("accountTableBody");
+            const empty = document.getElementById("emptyMessage");
+
+            if (accounts.length === 0) {
+                tbody.innerHTML = "";
+                empty.style.display = "block";
+                return;
+            }
+
+            empty.style.display = "none";
+            tbody.innerHTML = accounts.map((account, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${account.fullName}</td>
+                    <td>${account.birthDate}</td>
+                    <td>${account.email}</td>
+                    <td><button class="btn-danger" type="button" onclick="deleteAccount(${index})">Xoa</button></td>
+                </tr>
+            `).join("");
+        }
+
+        window.onload = function () {
+            initAccounts();
+            renderAccounts();
+        };
+    </script>
+</body>
+</html>

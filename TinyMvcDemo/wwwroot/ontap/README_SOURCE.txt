@@ -2,6 +2,7 @@ SOURCE ON TAP LAP TRINH WEB 2026
 
 File trong goi tai ve:
 - LONGNHATNGUYEN_CAU1.html: trang gioi thieu ca nhan.
+- LONGNHATNGUYEN_CAU2_DANG1.html: trang dang ky tai khoan, validate form, luu localStorage va hien thi bang.
 - LONGNHATNGUYEN_CAU2.html: trang quan ly san pham, validate form, luu localStorage va hien thi bang.
 
 Cach mo:
