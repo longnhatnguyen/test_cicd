@@ -20,10 +20,8 @@ html {
 
 body {
   margin-bottom: 60px;
-  background:
-    radial-gradient(circle at top, rgba(32, 201, 151, 0.18), transparent 32%),
-    linear-gradient(135deg, #07131f 0%, #0d2233 52%, #13324a 100%);
-  color: #eaf4ff;
+  background: #f2f6f4;
+  color: #1f2933;
 }
 
 .form-floating > .form-control-plaintext::placeholder,
@@ -39,132 +37,201 @@ body {
 
 .navbar,
 .footer {
-  background: rgba(255, 255, 255, 0.92) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
 }
 
-.clock-hero {
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 28px;
-  background: linear-gradient(145deg, rgba(7, 19, 31, 0.94), rgba(13, 34, 51, 0.88));
+.study-shell {
+  padding: 32px 0 56px;
 }
 
-.clock-grid {
+.study-hero {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 2rem;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: stretch;
+  padding: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #18324a 0%, #1f6f78 100%);
+  color: #ffffff;
+  box-shadow: 0 20px 50px rgba(24, 50, 74, 0.18);
 }
 
-.clock-badge {
+.study-badge,
+.assignment-number {
   display: inline-flex;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: fit-content;
+  margin-bottom: 14px;
+  padding: 7px 11px;
   border-radius: 999px;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.clock-meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.clock-meta > div,
-.clock-uptime {
-  padding: 1rem 1.15rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.clock-label,
-.clock-caption,
-.clock-zone {
-  display: block;
-  color: rgba(234, 244, 255, 0.72);
-}
-
-.clock-label,
-.clock-caption {
-  margin-bottom: 0.35rem;
+  background: rgba(255, 255, 255, 0.14);
   font-size: 0.78rem;
-  letter-spacing: 0.12em;
+  font-weight: 800;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.clock-panel {
+.study-hero h1 {
+  max-width: 760px;
+  margin: 0 0 14px;
+  font-size: clamp(2rem, 6vw, 3.35rem);
+  line-height: 1.05;
+}
+
+.study-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.status-panel {
   display: grid;
-  gap: 1rem;
+  align-content: center;
+  gap: 10px;
+  min-height: 220px;
+  padding: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.clock-ring {
+.status-panel span,
+.status-panel small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.status-panel strong {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.action-button,
+.assignment-card a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.action-button:hover,
+.assignment-card a:hover {
+  transform: translateY(-2px);
+}
+
+.action-button.primary {
+  background: #1f6f78;
+  color: #ffffff;
+}
+
+.action-button.download {
+  background: #18324a;
+  color: #ffffff;
+}
+
+.assignment-grid {
   display: grid;
-  place-items: center;
-  min-height: 320px;
-  padding: 1rem;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle, rgba(32, 201, 151, 0.28), transparent 56%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
-.clock-ring-core {
-  width: min(100%, 250px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 1.5rem;
-  border-radius: 50%;
-  border: 2px solid rgba(111, 255, 207, 0.35);
-  box-shadow:
-    inset 0 0 40px rgba(111, 255, 207, 0.08),
-    0 0 40px rgba(32, 201, 151, 0.16);
+.assignment-card,
+.deploy-card {
+  padding: 22px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  box-shadow: 0 12px 28px rgba(31, 41, 51, 0.08);
 }
 
-.clock-live {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.assignment-card .assignment-number {
+  background: #e4f2ef;
+  color: #155b4f;
 }
 
-.clock-zone {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
+.assignment-card h2,
+.deploy-card h2 {
+  margin: 0 0 12px;
+  color: #18324a;
+  font-size: 1.22rem;
+}
+
+.assignment-card p {
+  min-height: 96px;
+  color: #52616f;
+  line-height: 1.65;
+}
+
+.assignment-card a {
+  background: #eef7f5;
+  color: #155b4f;
 }
 
 .deploy-card {
-  border: none;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.96);
+  margin-top: 22px;
 }
 
-.deploy-card .card-body,
-.deploy-card .table {
-  color: #112233;
+.deploy-table {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.deploy-table div {
+  padding: 14px;
+  border-radius: 6px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.deploy-table span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.deploy-table code {
+  color: #18324a;
+  word-break: break-word;
 }
 
 @media (max-width: 991.98px) {
-  .clock-grid {
+  .study-hero,
+  .assignment-grid,
+  .deploy-table {
     grid-template-columns: 1fr;
+  }
+
+  .assignment-card p {
+    min-height: auto;
   }
 }
 
 @media (max-width: 575.98px) {
-  .clock-hero {
-    padding: 1.25rem;
+  .study-shell {
+    padding-top: 18px;
   }
 
-  .clock-meta {
-    grid-template-columns: 1fr;
+  .study-hero {
+    padding: 22px;
   }
 
-  .clock-ring {
-    min-height: 260px;
+  .quick-actions .action-button {
+    width: 100%;
   }
 }

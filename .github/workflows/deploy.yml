@@ -1,22 +1,28 @@
 name: Docker CI/CD
 
 on:
+  # Tu dong chay moi khi co code moi duoc push len nhanh main.
   push:
     branches:
       - main
+  # Cho phep bam tay "Run workflow" tren giao dien GitHub Actions.
   workflow_dispatch:
 
 env:
+  # Registry de luu Docker image sau khi build.
   REGISTRY: ghcr.io
+  # Thu muc app tren server, workflow se SSH vao day de deploy.
   APP_DIRECTORY: /opt/test_cicd
 
 jobs:
   build-and-push:
+    # Job nay build app, build image va push image len GHCR.
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     outputs:
+      # Truyen cac gia tri can thiet sang job deploy.
       image_repo: ${{ steps.image.outputs.image_repo }}
       image_tag: ${{ steps.vars.outputs.image_tag }}
       deployed_at: ${{ steps.vars.outputs.deployed_at }}
@@ -37,6 +43,7 @@ jobs:
         run: dotnet build TinyMvcDemo/TinyMvcDemo.csproj --configuration Release --no-restore
 
       - name: Prepare image metadata
+        # Tao ten image theo format ghcr.io/<owner>/<repo>.
         id: image
         shell: bash
         run: |
@@ -44,6 +51,7 @@ jobs:
           echo "image_repo=$IMAGE_REPO" >> "$GITHUB_OUTPUT"
 
       - name: Prepare deploy variables
+        # Cat SHA commit cho gon va tao moc thoi gian deploy.
         id: vars
         shell: bash
         run: |
@@ -52,6 +60,7 @@ jobs:
           echo "deployed_at=$(date '+%Y-%m-%d %H:%M:%S %z')" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
+        # Dang nhap vao GitHub Container Registry de co quyen push image.
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -59,6 +68,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        # Push 2 tag:
+        # - tag commit de co the trace chinh xac ban deploy
+        # - latest de server co the pull nhanh ban moi nhat
         uses: docker/build-push-action@v6
         with:
           context: ./TinyMvcDemo
@@ -69,13 +81,17 @@ jobs:
             ${{ steps.image.outputs.image_repo }}:latest
 
   deploy:
+    # Chi deploy sau khi build-and-push thanh cong.
     runs-on: ubuntu-latest
     needs: build-and-push
+    # Khoa deploy chi cho nhanh main.
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Deploy to Docker server over SSH
+        # SSH vao server va cap nhat container bang image moi vua duoc push.
         uses: appleboy/ssh-action@v1.2.0
         env:
+          # Cac bien nay duoc truyen sang shell tren server de docker compose dung lai.
           IMAGE_REPO: ${{ needs.build-and-push.outputs.image_repo }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
           BUILD_NUMBER: ${{ github.run_number }}
@@ -92,10 +108,15 @@ jobs:
           envs: IMAGE_REPO,IMAGE_TAG,BUILD_NUMBER,GIT_COMMIT_SHORT,DEPLOYED_AT,GHCR_USERNAME,GHCR_TOKEN,DEMO_MESSAGE
           script: |
             set -e
+            # Luon pull repo moi nhat tren server de file compose khop voi code vua deploy.
             cd "${{ env.APP_DIRECTORY }}"
             git pull --ff-only
+            # Dang nhap GHCR tren server de co quyen pull private image neu can.
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            # Export bien moi truong de docker compose thay duoc image va metadata deploy.
             export IMAGE_REPO IMAGE_TAG BUILD_NUMBER GIT_COMMIT_SHORT DEPLOYED_AT DEMO_MESSAGE
+            # Pull image moi va recreate container.
             docker compose -f deploy/docker-compose.server.yml pull
             docker compose -f deploy/docker-compose.server.yml up -d
+            # Don cac image cu khong con duoc su dung de tranh day disk.
             docker image prune -f

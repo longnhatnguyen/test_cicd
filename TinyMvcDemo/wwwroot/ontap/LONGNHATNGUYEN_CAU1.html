@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cau 1 - Gioi thieu ca nhan</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: linear-gradient(135deg, #f5efe6 0%, #dfeeea 48%, #d9e2f3 100%);
+            color: #1f2933;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .profile {
+            width: min(100%, 1040px);
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 28px;
+            align-items: stretch;
+        }
+
+        .profile-card,
+        .content-card {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(31, 41, 51, 0.08);
+            border-radius: 8px;
+            box-shadow: 0 18px 45px rgba(31, 41, 51, 0.12);
+        }
+
+        .profile-card {
+            padding: 28px;
+            text-align: center;
+        }
+
+        .avatar {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 6px solid #ffffff;
+            box-shadow: 0 12px 30px rgba(41, 74, 92, 0.2);
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #18324a;
+            margin-bottom: 8px;
+        }
+
+        .student-code {
+            display: inline-block;
+            padding: 7px 12px;
+            background: #e4f2ef;
+            color: #155b4f;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .content-card {
+            padding: 32px;
+        }
+
+        .hello {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #486581;
+            margin: 22px 0 12px;
+        }
+
+        .hobby-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            list-style: none;
+        }
+
+        .hobby-grid li {
+            padding: 14px;
+            border-radius: 8px;
+            background: #f7fafc;
+            border: 1px solid #d9e2ec;
+            font-weight: 600;
+        }
+
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .links a {
+            color: #ffffff;
+            background: #1f6f78;
+            text-decoration: none;
+            padding: 11px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .links a:hover {
+            background: #18324a;
+            transform: translateY(-2px);
+        }
+
+        .today {
+            margin-top: 24px;
+            padding: 14px;
+            border-left: 4px solid #1f6f78;
+            background: #eef7f5;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 760px) {
+            .profile {
+                grid-template-columns: 1fr;
+            }
+
+            .hobby-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="profile">
+        <aside class="profile-card">
+            <img class="avatar" alt="Anh dai dien" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23dfeeea'/%3E%3Ccircle cx='150' cy='110' r='58' fill='%231f6f78'/%3E%3Cpath d='M55 278c16-68 64-103 95-103s79 35 95 103' fill='%2318324a'/%3E%3Ctext x='150' y='285' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3ELTW%3C/text%3E%3C/svg%3E">
+            <h1>Long Nhat Nguyen</h1>
+            <span class="student-code">MASV: K24DTCN000</span>
+        </aside>
+
+        <section class="content-card">
+            <p class="hello">
+                Xin chao! Minh la sinh vien dang on tap mon Lap trinh Web. Minh quan tam den phat trien ung dung web,
+                giao dien gon gang va cach JavaScript giup trang web tro nen tuong tac hon.
+            </p>
+
+            <h2 class="section-title">So thich</h2>
+            <ul class="hobby-grid">
+                <li>Lap trinh web va Docker</li>
+                <li>Doc tai lieu cong nghe</li>
+                <li>Thiet ke giao dien don gian</li>
+                <li>Thu nghiem CI/CD voi GitHub Actions</li>
+            </ul>
+
+            <h2 class="section-title">Mang xa hoi</h2>
+            <div class="links">
+                <a href="https://github.com/longnhatnguyen" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+                <a href="mailto:student@example.com">Email</a>
+            </div>
+
+            <div id="today" class="today">Dang tai ngay he thong...</div>
+        </section>
+    </main>
+
+    <script>
+        const today = new Date();
+        const formatter = new Intl.DateTimeFormat("vi-VN", {
+            weekday: "long",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        });
+
+        document.getElementById("today").textContent = "Hom nay la: " + formatter.format(today);
+    </script>
+</body>
+</html>
