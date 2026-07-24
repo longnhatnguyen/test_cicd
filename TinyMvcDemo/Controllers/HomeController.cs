@@ -21,7 +21,7 @@ public class HomeController : Controller
         {
             AppName = "Tiny MVC Demo",
             DemoMessage = Environment.GetEnvironmentVariable("DEMO_MESSAGE")
-                ?? "Sua dong chu nay, push len GitHub, Jenkins se tu build va deploy lai.",
+                ?? "Sua dong chu nay, push len GitHub, GitHub Actions se tu build image va deploy lai.",
             Commit = Environment.GetEnvironmentVariable("GIT_COMMIT_SHORT") ?? "local-dev",
             BuildNumber = Environment.GetEnvironmentVariable("BUILD_NUMBER") ?? "manual",
             DeployedAt = Environment.GetEnvironmentVariable("DEPLOYED_AT") ?? DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"),

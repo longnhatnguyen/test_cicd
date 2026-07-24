@@ -1,0 +1,101 @@
+name: Docker CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  APP_DIRECTORY: /opt/test_cicd
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_repo: ${{ steps.image.outputs.image_repo }}
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+      deployed_at: ${{ steps.vars.outputs.deployed_at }}
+      short_commit: ${{ steps.vars.outputs.short_commit }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore TinyMvcDemo/TinyMvcDemo.csproj
+
+      - name: Build application
+        run: dotnet build TinyMvcDemo/TinyMvcDemo.csproj --configuration Release --no-restore
+
+      - name: Prepare image metadata
+        id: image
+        shell: bash
+        run: |
+          IMAGE_REPO="$(echo "${{ env.REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "image_repo=$IMAGE_REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare deploy variables
+        id: vars
+        shell: bash
+        run: |
+          echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "short_commit=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "deployed_at=$(date '+%Y-%m-%d %H:%M:%S %z')" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./TinyMvcDemo
+          file: ./TinyMvcDemo/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image.outputs.image_repo }}:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.image.outputs.image_repo }}:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Docker server over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_REPO: ${{ needs.build-and-push.outputs.image_repo }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          GIT_COMMIT_SHORT: ${{ needs.build-and-push.outputs.short_commit }}
+          DEPLOYED_AT: ${{ needs.build-and-push.outputs.deployed_at }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          DEMO_MESSAGE: Ban dang xem ban duoc deploy tu GitHub Actions commit ${{ needs.build-and-push.outputs.short_commit }}.
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          envs: IMAGE_REPO,IMAGE_TAG,BUILD_NUMBER,GIT_COMMIT_SHORT,DEPLOYED_AT,GHCR_USERNAME,GHCR_TOKEN,DEMO_MESSAGE
+          script: |
+            set -e
+            cd "${{ env.APP_DIRECTORY }}"
+            git pull --ff-only
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            export IMAGE_REPO IMAGE_TAG BUILD_NUMBER GIT_COMMIT_SHORT DEPLOYED_AT DEMO_MESSAGE
+            docker compose -f deploy/docker-compose.server.yml pull
+            docker compose -f deploy/docker-compose.server.yml up -d
+            docker image prune -f
