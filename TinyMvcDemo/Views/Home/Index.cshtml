@@ -1,4 +1,4 @@
-﻿@model TinyMvcDemo.Models.HomePageViewModel
+@model TinyMvcDemo.Models.HomePageViewModel
 @{
     ViewData["Title"] = "CI/CD Demo";
 }
@@ -6,13 +6,45 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-9">
-            <div class="text-center mb-4">
-                <span class="badge rounded-pill text-bg-dark mb-3">GitHub Actions -> GHCR -> Docker -> ASP.NET MVC</span>
-                <h1 class="display-5 fw-bold">@Model.AppName</h1>
-                <p class="lead text-muted mb-0">Ban dang xem ban demo duoc auto deploy tu GitHub Actions len server Docker.</p>
-            </div>
+            <section class="clock-hero shadow-lg mb-4">
+                <div class="clock-grid">
+                    <div>
+                        <span class="clock-badge">GitHub Actions -> GHCR -> Docker -> ASP.NET MVC</span>
+                        <h1 class="display-5 fw-bold mb-3">@Model.AppName</h1>
+                        <p class="lead text-light-emphasis mb-4">
+                            Ban dang xem ban demo duoc auto deploy tu GitHub Actions len server Docker.
+                        </p>
 
-            <div class="card shadow-sm">
+                        <div class="clock-meta">
+                            <div>
+                                <span class="clock-label">Server time</span>
+                                <strong id="clock-time">--:--:--</strong>
+                            </div>
+                            <div>
+                                <span class="clock-label">Today</span>
+                                <strong id="clock-date">Dang dong bo...</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="clock-panel">
+                        <div class="clock-ring">
+                            <div class="clock-ring-core">
+                                <span class="clock-caption">ONLINE NOW</span>
+                                <div id="clock-live" class="clock-live">--:--:--</div>
+                                <div class="clock-zone">UTC+07 / Asia-Bangkok style</div>
+                            </div>
+                        </div>
+
+                        <div class="clock-uptime">
+                            <span class="clock-label">Realtime ticker</span>
+                            <strong id="clock-uptime">Dang khoi dong...</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="card shadow-sm deploy-card">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-3">Thong tin ban deploy dang chay</h2>
                     <div class="table-responsive">
@@ -41,7 +73,7 @@
             </div>
 
             <p class="text-center text-muted mt-4 mb-0">
-                Moi lan ban sua thong diep tren trang nay va push len repo, GitHub Actions se build image moi va cap nhat site dang host tren may cua ban.
+                Moi lan ban push len nhanh `main`, GitHub Actions se build image moi va cap nhat site dang host tren may cua ban.
             </p>
         </div>
     </div>

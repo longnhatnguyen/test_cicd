@@ -1,5 +1,7 @@
 html {
   font-size: 14px;
+  position: relative;
+  min-height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -8,24 +10,161 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
 }
 
 body {
   margin-bottom: 60px;
+  background:
+    radial-gradient(circle at top, rgba(32, 201, 151, 0.18), transparent 32%),
+    linear-gradient(135deg, #07131f 0%, #0d2233 52%, #13324a 100%);
+  color: #eaf4ff;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+.navbar,
+.footer {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.clock-hero {
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(7, 19, 31, 0.94), rgba(13, 34, 51, 0.88));
+}
+
+.clock-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.clock-badge {
+  display: inline-flex;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.clock-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.clock-meta > div,
+.clock-uptime {
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.clock-label,
+.clock-caption,
+.clock-zone {
+  display: block;
+  color: rgba(234, 244, 255, 0.72);
+}
+
+.clock-label,
+.clock-caption {
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.clock-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.clock-ring {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  padding: 1rem;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle, rgba(32, 201, 151, 0.28), transparent 56%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+.clock-ring-core {
+  width: min(100%, 250px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid rgba(111, 255, 207, 0.35);
+  box-shadow:
+    inset 0 0 40px rgba(111, 255, 207, 0.08),
+    0 0 40px rgba(32, 201, 151, 0.16);
+}
+
+.clock-live {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.clock-zone {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.deploy-card {
+  border: none;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.deploy-card .card-body,
+.deploy-card .table {
+  color: #112233;
+}
+
+@media (max-width: 991.98px) {
+  .clock-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .clock-hero {
+    padding: 1.25rem;
+  }
+
+  .clock-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .clock-ring {
+    min-height: 260px;
+  }
 }
