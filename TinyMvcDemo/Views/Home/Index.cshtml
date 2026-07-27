@@ -3,99 +3,13 @@
     ViewData["Title"] = "Trang chủ";
 }
 
-<section class="promo-shell">
-    <section class="promo-hero">
-        <div class="promo-copy">
-            <span class="promo-badge">NhatNL.io.vn</span>
-            <h1>Landing page giới thiệu bài thực hành web, source tải nhanh và demo chạy thật trên server</h1>
-            <p class="promo-lead">
-                Đây là trang quảng bá ngắn gọn cho bộ bài LTW 2026: có giao diện xem trước, source tải ngay,
-                và quy trình deploy thật qua GitHub Actions để thầy cô hoặc nhà tuyển dụng có thể xem trực tiếp.
-            </p>
-
-            <div class="promo-actions">
-                <a class="action-button primary" asp-controller="Home" asp-action="Lab">Xem bộ bài ôn tập</a>
-                <a class="action-button secondary" asp-controller="Download" asp-action="Source" asp-route-id="all">Tải toàn bộ source</a>
-            </div>
-
-            <ul class="promo-points">
-                <li>Preview trực tiếp từng bài HTML, CSS, JavaScript trong trình duyệt.</li>
-                <li>Tách rõ phần giới thiệu và phần bài làm để người xem không bị rối.</li>
-                <li>Deploy tự động qua GitHub Actions lên VPS và public bằng domain riêng.</li>
-            </ul>
-        </div>
-
-        <div class="promo-metrics">
-            <div class="promo-card accent">
-                <span>Thông điệp demo</span>
-                <strong>@Model.DemoMessage</strong>
-            </div>
-            <div class="promo-card">
-                <span>Build hiện tại</span>
-                <strong>#@Model.BuildNumber</strong>
-            </div>
-            <div class="promo-card">
-                <span>Commit</span>
-                <strong>@Model.Commit</strong>
-            </div>
-            <div class="promo-card dark">
-                <span>Môi trường</span>
-                <strong>@Model.EnvironmentName</strong>
-                <small>@Model.DeployedAt</small>
-            </div>
-        </div>
-    </section>
-
-    <section class="promo-section">
-        <div class="promo-section-header">
-            <div>
-                <span class="study-badge muted">Có gì bên trong</span>
-                <h2>Bộ bài được gom vào một menu riêng để dễ xem và dễ chấm</h2>
-                <p>
-                    Trang chủ tập trung giới thiệu nhanh giá trị của project. Toàn bộ phần bài làm, source tải về,
-                    preview và thông tin deploy chi tiết đã được chuyển sang mục <strong>Bài ôn tập</strong>.
-                </p>
-            </div>
-        </div>
-
-        <div class="promo-grid">
-            <article class="feature-card warm">
-                <span>Menu riêng</span>
-                <h3>Bài ôn tập</h3>
-                <p>Xem từng bài, mở tab riêng, tải source đúng bài và giữ nguyên trải nghiệm preview đang có.</p>
-            </article>
-
-            <article class="feature-card cool">
-                <span>Vận hành thật</span>
-                <h3>Deploy CI/CD</h3>
-                <p>Code được build và deploy thật trên server, phù hợp để demo quy trình học và làm web thực tế.</p>
-            </article>
-
-            <article class="feature-card dark">
-                <span>Dễ trình bày</span>
-                <h3>Landing page rõ ý</h3>
-                <p>Người xem vào là hiểu project này dùng để làm gì trước khi đi sâu vào nội dung chi tiết.</p>
-            </article>
-        </div>
-    </section>
-
-    <section class="promo-section compact">
-        <div class="promo-section-header">
-            <div>
-                <span class="study-badge muted">Điều hướng nhanh</span>
-                <h2>Truy cập nhanh các phần chính</h2>
-            </div>
-        </div>
-
-        <div class="quick-links">
-            <a class="quick-link-card" asp-controller="Home" asp-action="Lab">
-                <strong>Mở mục Bài ôn tập</strong>
-                <small>Xem demo, source và trạng thái deploy hiện tại.</small>
-            </a>
-            <a class="quick-link-card" asp-controller="Home" asp-action="Privacy">
-                <strong>Xem trang Privacy</strong>
-                <small>Giữ nguyên trang hệ thống sẵn có của project.</small>
-            </a>
-        </div>
-    </section>
+<section class="simple-home">
+    <div class="simple-home-card">
+        <p class="simple-home-eyebrow">NhatNL.io.vn</p>
+        <h1>Chào bạn, tôi là Nhật.</h1>
+        <p class="simple-home-text">
+            Bây giờ là <strong id="clock-live">--:--:--</strong>
+        </p>
+        <p class="simple-home-date" id="clock-date">Đang cập nhật thời gian...</p>
+    </div>
 </section>
