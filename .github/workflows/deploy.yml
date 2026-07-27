@@ -95,7 +95,7 @@ jobs:
           IMAGE_REPO: ${{ needs.build-and-push.outputs.image_repo }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
           ENABLE_HTTPS_REDIRECTION: "false"
-          APP_PORT: "80"
+          APP_PORT: "5055"
           BUILD_NUMBER: ${{ github.run_number }}
           GIT_COMMIT_SHORT: ${{ needs.build-and-push.outputs.short_commit }}
           DEPLOYED_AT: ${{ needs.build-and-push.outputs.deployed_at }}

@@ -65,6 +65,7 @@ Mo cong app neu can:
 
 ```bash
 sudo ufw allow 80/tcp
+sudo ufw allow 5055/tcp
 ```
 
 ## Deploy lan dau thu cong tren server
@@ -82,13 +83,17 @@ cd /opt/test_cicd
 export IMAGE_REPO=ghcr.io/longnhatnguyen/test_cicd
 export IMAGE_TAG=latest
 export ENABLE_HTTPS_REDIRECTION=false
-export APP_PORT=80
+export APP_PORT=5055
 docker compose -f deploy/docker-compose.server.yml up -d
 ```
 
 Sau do app se len o:
 
 - `http://nhatnl.io.vn`
+
+Qua nginx reverse proxy, backend van chay noi bo tren:
+
+- `http://127.0.0.1:5055`
 
 ## Cau hinh DNS cho `nhatnl.io.vn`
 
