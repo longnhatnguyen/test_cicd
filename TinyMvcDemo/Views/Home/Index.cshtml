@@ -1,89 +1,101 @@
 @model TinyMvcDemo.Models.HomePageViewModel
 @{
-    ViewData["Title"] = "Ôn tập LTW 2026";
+    ViewData["Title"] = "Trang chủ";
 }
 
-<section class="study-shell">
-    <section class="study-hero">
-        <div class="hero-copy">
-            <span class="study-badge">LTW 2026 Personal Lab</span>
-            <h1>Bộ bài ôn tập có preview và source tải nhanh</h1>
-            <p>
-                Mỗi câu là một trang HTML độc lập, có CSS và JavaScript nhúng trực tiếp đúng yêu cầu đề.
-                Chọn bài bên dưới để xem kết quả ngay, mở tab riêng hoặc tải source của đúng bài đó.
+<section class="promo-shell">
+    <section class="promo-hero">
+        <div class="promo-copy">
+            <span class="promo-badge">NhatNL.io.vn</span>
+            <h1>Landing page giới thiệu bài thực hành web, source tải nhanh và demo chạy thật trên server</h1>
+            <p class="promo-lead">
+                Đây là trang quảng bá ngắn gọn cho bộ bài LTW 2026: có giao diện xem trước, source tải ngay,
+                và quy trình deploy thật qua GitHub Actions để thầy cô hoặc nhà tuyển dụng có thể xem trực tiếp.
             </p>
+
+            <div class="promo-actions">
+                <a class="action-button primary" asp-controller="Home" asp-action="Lab">Xem bộ bài ôn tập</a>
+                <a class="action-button secondary" asp-controller="Download" asp-action="Source" asp-route-id="all">Tải toàn bộ source</a>
+            </div>
+
+            <ul class="promo-points">
+                <li>Preview trực tiếp từng bài HTML, CSS, JavaScript trong trình duyệt.</li>
+                <li>Tách rõ phần giới thiệu và phần bài làm để người xem không bị rối.</li>
+                <li>Deploy tự động qua GitHub Actions lên VPS và public bằng domain riêng.</li>
+            </ul>
         </div>
 
-        <div class="status-panel">
-            <span>Trạng thái server</span>
-            <strong id="clock-live">--:--:--</strong>
-            <small id="clock-date">Đang đồng bộ ngày...</small>
-            <a asp-controller="Download" asp-action="Source" asp-route-id="all">Tải toàn bộ source</a>
+        <div class="promo-metrics">
+            <div class="promo-card accent">
+                <span>Thông điệp demo</span>
+                <strong>@Model.DemoMessage</strong>
+            </div>
+            <div class="promo-card">
+                <span>Build hiện tại</span>
+                <strong>#@Model.BuildNumber</strong>
+            </div>
+            <div class="promo-card">
+                <span>Commit</span>
+                <strong>@Model.Commit</strong>
+            </div>
+            <div class="promo-card dark">
+                <span>Môi trường</span>
+                <strong>@Model.EnvironmentName</strong>
+                <small>@Model.DeployedAt</small>
+            </div>
         </div>
     </section>
 
-    <div class="assignment-grid" id="assignment-list">
-        <button class="assignment-card is-active" type="button"
-                data-title="Câu 1 - Hồ sơ cá nhân"
-                data-summary="Có ảnh đại diện, họ tên, lời chào, sở thích, mạng xã hội, hiệu ứng hover, xử lý DOM và ngày hệ thống bằng JavaScript."
-                data-preview="/ontap/LONGNHATNGUYEN_CAU1.html"
-                data-download="/Download/Source?id=cau1">
-            <span class="assignment-number">Câu 1</span>
-            <strong>Hồ sơ cá nhân</strong>
-            <small>Trang giới thiệu giống một thẻ portfolio nhỏ, có lời chào đổi bằng JavaScript.</small>
-        </button>
-
-        <button class="assignment-card" type="button"
-                data-title="Câu 2 - Dạng 1: Đăng ký tài khoản"
-                data-summary="Form gồm họ tên, ngày sinh dd/mm/yyyy, email, mật khẩu, xác nhận mật khẩu; kiểm tra lỗi, lưu localStorage và hiển thị bảng."
-                data-preview="/ontap/LONGNHATNGUYEN_CAU2_DANG1.html"
-                data-download="/Download/Source?id=cau2-dang1">
-            <span class="assignment-number">Câu 2 - Dạng 1</span>
-            <strong>Đăng ký tài khoản</strong>
-            <small>Giao diện như bàn tiếp nhận hồ sơ, có thống kê số tài khoản đã lưu.</small>
-        </button>
-
-        <button class="assignment-card" type="button"
-                data-title="Câu 2 - Dạng 2: Quản lý sản phẩm"
-                data-summary="Form gồm mã sản phẩm 8 chữ số, tên tối đa 300 ký tự, số lượng, đơn giá, chủng loại; kiểm tra lỗi, lưu localStorage và hiển thị bảng."
-                data-preview="/ontap/LONGNHATNGUYEN_CAU2.html"
-                data-download="/Download/Source?id=cau2-dang2">
-            <span class="assignment-number">Câu 2 - Dạng 2</span>
-            <strong>Quản lý sản phẩm</strong>
-            <small>Bảng kho nhỏ có tổng tiền, dữ liệu mẫu, validate rõ ngay dưới từng trường.</small>
-        </button>
-    </div>
-
-    <section class="result-panel">
-        <div class="result-header">
+    <section class="promo-section">
+        <div class="promo-section-header">
             <div>
-                <span class="study-badge muted">Kết quả đang xem</span>
-                <h2 id="result-title">Câu 1 - Hồ sơ cá nhân</h2>
-                <p id="result-summary">
-                    Có ảnh đại diện, họ tên, lời chào, sở thích, mạng xã hội, hiệu ứng hover, xử lý DOM và ngày hệ thống bằng JavaScript.
+                <span class="study-badge muted">Có gì bên trong</span>
+                <h2>Bộ bài được gom vào một menu riêng để dễ xem và dễ chấm</h2>
+                <p>
+                    Trang chủ tập trung giới thiệu nhanh giá trị của project. Toàn bộ phần bài làm, source tải về,
+                    preview và thông tin deploy chi tiết đã được chuyển sang mục <strong>Bài ôn tập</strong>.
                 </p>
             </div>
+        </div>
 
-            <div class="result-actions">
-                <a id="open-result" class="action-button primary" href="/ontap/LONGNHATNGUYEN_CAU1.html" target="_blank" rel="noopener">
-                    Mở tab riêng
-                </a>
-                <a id="download-result" class="action-button download" href="/Download/Source?id=cau1">
-                    Tải source câu này
-                </a>
+        <div class="promo-grid">
+            <article class="feature-card warm">
+                <span>Menu riêng</span>
+                <h3>Bài ôn tập</h3>
+                <p>Xem từng bài, mở tab riêng, tải source đúng bài và giữ nguyên trải nghiệm preview đang có.</p>
+            </article>
+
+            <article class="feature-card cool">
+                <span>Vận hành thật</span>
+                <h3>Deploy CI/CD</h3>
+                <p>Code được build và deploy thật trên server, phù hợp để demo quy trình học và làm web thực tế.</p>
+            </article>
+
+            <article class="feature-card dark">
+                <span>Dễ trình bày</span>
+                <h3>Landing page rõ ý</h3>
+                <p>Người xem vào là hiểu project này dùng để làm gì trước khi đi sâu vào nội dung chi tiết.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="promo-section compact">
+        <div class="promo-section-header">
+            <div>
+                <span class="study-badge muted">Điều hướng nhanh</span>
+                <h2>Truy cập nhanh các phần chính</h2>
             </div>
         </div>
 
-        <iframe id="result-frame" title="Kết quả bài làm" src="/ontap/LONGNHATNGUYEN_CAU1.html"></iframe>
-    </section>
-
-    <section class="deploy-card">
-        <h2>Thông tin deploy hiện tại</h2>
-        <div class="deploy-table">
-            <div><span>Commit</span><code>@Model.Commit</code></div>
-            <div><span>Build number</span><code>@Model.BuildNumber</code></div>
-            <div><span>Deployed at</span><code>@Model.DeployedAt</code></div>
-            <div><span>Environment</span><code>@Model.EnvironmentName</code></div>
+        <div class="quick-links">
+            <a class="quick-link-card" asp-controller="Home" asp-action="Lab">
+                <strong>Mở mục Bài ôn tập</strong>
+                <small>Xem demo, source và trạng thái deploy hiện tại.</small>
+            </a>
+            <a class="quick-link-card" asp-controller="Home" asp-action="Privacy">
+                <strong>Xem trang Privacy</strong>
+                <small>Giữ nguyên trang hệ thống sẵn có của project.</small>
+            </a>
         </div>
     </section>
 </section>

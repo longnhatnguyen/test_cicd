@@ -17,17 +17,13 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var model = new HomePageViewModel
-        {
-            AppName = "Tiny MVC Demo",
-            DemoMessage = Environment.GetEnvironmentVariable("DEMO_MESSAGE")
-                ?? "Sua dong chu nay, push len GitHub, GitHub Actions se tu build image va deploy lai.",
-            Commit = Environment.GetEnvironmentVariable("GIT_COMMIT_SHORT") ?? "local-dev",
-            BuildNumber = Environment.GetEnvironmentVariable("BUILD_NUMBER") ?? "manual",
-            DeployedAt = Environment.GetEnvironmentVariable("DEPLOYED_AT") ?? DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"),
-            EnvironmentName = _environment.EnvironmentName
-        };
+        var model = BuildHomePageViewModel();
+        return View(model);
+    }
 
+    public IActionResult Lab()
+    {
+        var model = BuildHomePageViewModel();
         return View(model);
     }
 
@@ -40,5 +36,19 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    private HomePageViewModel BuildHomePageViewModel()
+    {
+        return new HomePageViewModel
+        {
+            AppName = "Tiny MVC Demo",
+            DemoMessage = Environment.GetEnvironmentVariable("DEMO_MESSAGE")
+                ?? "Sua dong chu nay, push len GitHub, GitHub Actions se tu build image va deploy lai.",
+            Commit = Environment.GetEnvironmentVariable("GIT_COMMIT_SHORT") ?? "local-dev",
+            BuildNumber = Environment.GetEnvironmentVariable("BUILD_NUMBER") ?? "manual",
+            DeployedAt = Environment.GetEnvironmentVariable("DEPLOYED_AT") ?? DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"),
+            EnvironmentName = _environment.EnvironmentName
+        };
     }
 }
