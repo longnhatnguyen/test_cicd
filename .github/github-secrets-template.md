@@ -19,6 +19,7 @@ GHCR_READ_TOKEN=
 - `SERVER_USER`: user dung de deploy
 - `SERVER_SSH_PASSWORD`: mat khau SSH cua user deploy
 - `GHCR_READ_TOKEN`: token GitHub co quyen `read:packages`
+- `SERVER_HOST` van la dia chi SSH cua server, khong phai domain public cua web
 
 ## Ghi chu
 

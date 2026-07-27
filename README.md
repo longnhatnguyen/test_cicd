@@ -64,7 +64,7 @@ newgrp docker
 Mo cong app neu can:
 
 ```bash
-sudo ufw allow 5055/tcp
+sudo ufw allow 80/tcp
 ```
 
 ## Deploy lan dau thu cong tren server
@@ -81,12 +81,23 @@ Chay app:
 cd /opt/test_cicd
 export IMAGE_REPO=ghcr.io/longnhatnguyen/test_cicd
 export IMAGE_TAG=latest
+export ENABLE_HTTPS_REDIRECTION=false
+export APP_PORT=80
 docker compose -f deploy/docker-compose.server.yml up -d
 ```
 
 Sau do app se len o:
 
-- `http://<server-ip>:5055`
+- `http://nhatnl.io.vn`
+
+## Cau hinh DNS cho `nhatnl.io.vn`
+
+Tai nha cung cap domain, tao ban ghi:
+
+- `A` record: `@` -> `IP public cua server`
+- Neu muon them `www`, tao them:
+- `CNAME` record: `www` -> `nhatnl.io.vn`
+Sau khi DNS da propagate, app se phuc vu truc tiep qua cong `80` public.
 
 ## Cach test CI/CD
 
@@ -107,6 +118,11 @@ Ban se thay:
 - `Commit` doi theo commit moi
 - `Build number` doi theo GitHub Actions run number
 - `Deployed at` doi theo lan deploy moi
+
+## Luu y domain va HTTP
+
+- App ASP.NET duoc cau hinh khong ep redirect HTTPS khi `ENABLE_HTTPS_REDIRECTION=false`.
+- `SERVER_HOST` trong GitHub Secrets van la IP hoac host dung de SSH deploy, khong phai domain public cua web.
 
 ## Ghi chu
 
