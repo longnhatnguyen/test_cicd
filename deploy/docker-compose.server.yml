@@ -13,3 +13,13 @@ services:
       GIT_COMMIT_SHORT: ${GIT_COMMIT_SHORT:-local-dev}
       DEPLOYED_AT: ${DEPLOYED_AT:-unknown}
       DEMO_MESSAGE: ${DEMO_MESSAGE:-Ban dang xem ban duoc deploy tu GitHub Actions.}
+
+  telegram-bot:
+    image: ${BOT_IMAGE_REPO}:${BOT_IMAGE_TAG:-latest}
+    container_name: telegram-ai-bot
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_SYSTEM_PROMPT: ${OPENAI_SYSTEM_PROMPT:-Ban la tro ly Telegram gon gang, lich su va huu ich. Tra loi bang tieng Viet neu nguoi dung viet tieng Viet.}

@@ -23,7 +23,8 @@ jobs:
       packages: write
     outputs:
       # Truyen cac gia tri can thiet sang job deploy.
-      image_repo: ${{ steps.image.outputs.image_repo }}
+      app_image_repo: ${{ steps.image.outputs.app_image_repo }}
+      bot_image_repo: ${{ steps.image.outputs.bot_image_repo }}
       image_tag: ${{ steps.vars.outputs.image_tag }}
       deployed_at: ${{ steps.vars.outputs.deployed_at }}
       short_commit: ${{ steps.vars.outputs.short_commit }}
@@ -37,18 +38,23 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore dependencies
-        run: dotnet restore TinyMvcDemo/TinyMvcDemo.csproj
+        run: |
+          dotnet restore TinyMvcDemo/TinyMvcDemo.csproj
+          dotnet restore TelegramAiBot/TelegramAiBot.csproj
 
       - name: Build application
-        run: dotnet build TinyMvcDemo/TinyMvcDemo.csproj --configuration Release --no-restore
+        run: |
+          dotnet build TinyMvcDemo/TinyMvcDemo.csproj --configuration Release --no-restore
+          dotnet build TelegramAiBot/TelegramAiBot.csproj --configuration Release --no-restore
 
       - name: Prepare image metadata
-        # Tao ten image theo format ghcr.io/<owner>/<repo>.
+        # Tao ten image rieng cho web app va bot.
         id: image
         shell: bash
         run: |
-          IMAGE_REPO="$(echo "${{ env.REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
-          echo "image_repo=$IMAGE_REPO" >> "$GITHUB_OUTPUT"
+          IMAGE_BASE="$(echo "${{ env.REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "app_image_repo=${IMAGE_BASE}-app" >> "$GITHUB_OUTPUT"
+          echo "bot_image_repo=${IMAGE_BASE}-telegram-bot" >> "$GITHUB_OUTPUT"
 
       - name: Prepare deploy variables
         # Cat SHA commit cho gon va tao moc thoi gian deploy.
@@ -67,18 +73,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        # Push 2 tag:
-        # - tag commit de co the trace chinh xac ban deploy
-        # - latest de server co the pull nhanh ban moi nhat
+      - name: Build and push app image
         uses: docker/build-push-action@v6
         with:
           context: ./TinyMvcDemo
           file: ./TinyMvcDemo/Dockerfile
           push: true
           tags: |
-            ${{ steps.image.outputs.image_repo }}:${{ steps.vars.outputs.image_tag }}
-            ${{ steps.image.outputs.image_repo }}:latest
+            ${{ steps.image.outputs.app_image_repo }}:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.image.outputs.app_image_repo }}:latest
+
+      - name: Build and push telegram bot image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./TelegramAiBot
+          file: ./TelegramAiBot/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image.outputs.bot_image_repo }}:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.image.outputs.bot_image_repo }}:latest
 
   deploy:
     # Chi deploy sau khi build-and-push thanh cong.
@@ -92,8 +105,10 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         env:
           # Cac bien nay duoc truyen sang shell tren server de docker compose dung lai.
-          IMAGE_REPO: ${{ needs.build-and-push.outputs.image_repo }}
+          IMAGE_REPO: ${{ needs.build-and-push.outputs.app_image_repo }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          BOT_IMAGE_REPO: ${{ needs.build-and-push.outputs.bot_image_repo }}
+          BOT_IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
           ENABLE_HTTPS_REDIRECTION: "false"
           APP_PORT: "5055"
           BUILD_NUMBER: ${{ github.run_number }}
@@ -101,13 +116,16 @@ jobs:
           DEPLOYED_AT: ${{ needs.build-and-push.outputs.deployed_at }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-4.1-mini
           DEMO_MESSAGE: Ban dang xem ban duoc deploy tu GitHub Actions commit ${{ needs.build-and-push.outputs.short_commit }}.
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_SSH_PASSWORD }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          envs: IMAGE_REPO,IMAGE_TAG,ENABLE_HTTPS_REDIRECTION,APP_PORT,BUILD_NUMBER,GIT_COMMIT_SHORT,DEPLOYED_AT,GHCR_USERNAME,GHCR_TOKEN,DEMO_MESSAGE
+          envs: IMAGE_REPO,IMAGE_TAG,BOT_IMAGE_REPO,BOT_IMAGE_TAG,ENABLE_HTTPS_REDIRECTION,APP_PORT,BUILD_NUMBER,GIT_COMMIT_SHORT,DEPLOYED_AT,GHCR_USERNAME,GHCR_TOKEN,TELEGRAM_BOT_TOKEN,OPENAI_API_KEY,OPENAI_MODEL,DEMO_MESSAGE
           script: |
             set -e
             # Luon pull repo moi nhat tren server de file compose khop voi code vua deploy.
@@ -116,7 +134,8 @@ jobs:
             # Dang nhap GHCR tren server de co quyen pull private image neu can.
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
             # Export bien moi truong de docker compose thay duoc image va metadata deploy.
-            export IMAGE_REPO IMAGE_TAG ENABLE_HTTPS_REDIRECTION APP_PORT BUILD_NUMBER GIT_COMMIT_SHORT DEPLOYED_AT DEMO_MESSAGE
+            export IMAGE_REPO IMAGE_TAG BOT_IMAGE_REPO BOT_IMAGE_TAG ENABLE_HTTPS_REDIRECTION APP_PORT BUILD_NUMBER GIT_COMMIT_SHORT DEPLOYED_AT DEMO_MESSAGE
+            export TELEGRAM_BOT_TOKEN OPENAI_API_KEY OPENAI_MODEL
             # Pull image moi va recreate container.
             docker compose -f deploy/docker-compose.server.yml pull
             docker compose -f deploy/docker-compose.server.yml up -d

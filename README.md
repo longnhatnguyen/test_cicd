@@ -87,6 +87,13 @@ export APP_PORT=5055
 docker compose -f deploy/docker-compose.server.yml up -d
 ```
 
+Neu muon chay ca Telegram bot song song cung luc deploy, can co them 2 GitHub Secrets:
+
+- `TELEGRAM_BOT_TOKEN`
+- `OPENAI_API_KEY`
+
+Workflow se tu build image `TelegramAiBot`, push len GHCR, roi tren server `docker compose up -d` ca web app va bot.
+
 Sau do app se len o:
 
 - `http://nhatnl.io.vn`
@@ -133,3 +140,24 @@ Ban se thay:
 
 - `docker-compose.yml`, `Dockerfile.jenkins`, `Jenkinsfile` la file tu demo Jenkins cu, hien khong can cho flow GitHub Actions.
 - Neu muon, ban co the xoa cac file Jenkins sau khi da chay on pipeline moi.
+
+## Telegram AI Bot
+
+Repo nay da co them project `TelegramAiBot/` de chay bot Telegram bang polling tren VPS Linux.
+
+Chay nhanh:
+
+```bash
+export TELEGRAM_BOT_TOKEN="<telegram-token>"
+export OPENAI_API_KEY="<openai-api-key>"
+dotnet run --project TelegramAiBot
+```
+
+Xem huong dan chi tiet trong `TelegramAiBot/README.md`.
+
+Khi push len nhanh `main`, workflow GitHub Actions se deploy song song:
+
+- `tinymvcdemo-app`
+- `telegram-ai-bot`
+
+Bot khong mo cong public rieng, vi no dung polling de nhan tin nhan tu Telegram.
