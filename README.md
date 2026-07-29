@@ -90,6 +90,8 @@ docker compose -f deploy/docker-compose.server.yml up -d
 Neu muon chay ca Telegram bot song song cung luc deploy, can co them 2 GitHub Secrets:
 
 - `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_ACCESS_PASSWORD`
+- `POSTGRES_CONNECTION_STRING`
 - `OPENAI_API_KEY`
 
 Workflow se tu build image `TelegramAiBot`, push len GHCR, roi tren server `docker compose up -d` ca web app va bot.
@@ -149,6 +151,8 @@ Chay nhanh:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="<telegram-token>"
+export TELEGRAM_ACCESS_PASSWORD="<mat-khau-vao-bot>"
+export POSTGRES_CONNECTION_STRING="Host=host.docker.internal;Port=5432;Database=telegram_bot_db;Username=botuser;Password=<db-password>"
 export OPENAI_API_KEY="<openai-api-key>"
 dotnet run --project TelegramAiBot
 ```
@@ -161,3 +165,5 @@ Khi push len nhanh `main`, workflow GitHub Actions se deploy song song:
 - `telegram-ai-bot`
 
 Bot khong mo cong public rieng, vi no dung polling de nhan tin nhan tu Telegram.
+Bot cung yeu cau nhap dung mat khau truoc khi cho phep chat AI.
+Bot luu trang thai va memory ngan vao PostgreSQL de nho duoc ngữ cảnh sau khi restart.

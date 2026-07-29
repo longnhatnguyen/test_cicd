@@ -11,6 +11,8 @@ SERVER_USER=
 SERVER_SSH_PASSWORD=
 GHCR_READ_TOKEN=
 TELEGRAM_BOT_TOKEN=
+TELEGRAM_ACCESS_PASSWORD=
+POSTGRES_CONNECTION_STRING=
 OPENAI_API_KEY=
 ```
 
@@ -22,6 +24,8 @@ OPENAI_API_KEY=
 - `SERVER_SSH_PASSWORD`: mat khau SSH cua user deploy
 - `GHCR_READ_TOKEN`: token GitHub co quyen `read:packages`
 - `TELEGRAM_BOT_TOKEN`: token bot tu `@BotFather`
+- `TELEGRAM_ACCESS_PASSWORD`: mat khau nguoi dung can nhap truoc khi noi chuyen voi bot
+- `POSTGRES_CONNECTION_STRING`: chuoi ket noi PostgreSQL cho bot, vi du `Host=host.docker.internal;Port=5432;Database=telegram_bot_db;Username=botuser;Password=...`
 - `OPENAI_API_KEY`: API key dung de bot goi AI
 - `SERVER_HOST` van la dia chi SSH cua server, khong phai domain public cua web
 
