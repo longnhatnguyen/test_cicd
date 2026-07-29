@@ -128,8 +128,8 @@ internal sealed record BotConfig(
             AccessPassword: Environment.GetEnvironmentVariable("TELEGRAM_ACCESS_PASSWORD")?.Trim()
                 ?? throw new InvalidOperationException("Missing TELEGRAM_ACCESS_PASSWORD environment variable."),
             PostgresConnectionString: postgresConnectionString,
-            MaxConversationMessages: ReadInt("MAX_CONVERSATION_MESSAGES", 8),
-            StoredMessageLimit: ReadInt("STORED_MESSAGE_LIMIT", 16),
+            MaxConversationMessages: ReadInt("MAX_CONVERSATION_MESSAGES", 24),
+            StoredMessageLimit: ReadInt("STORED_MESSAGE_LIMIT", 30),
             MaxMessageCharactersPerTurn: ReadInt("MAX_MESSAGE_CHARACTERS_PER_TURN", 800));
     }
 

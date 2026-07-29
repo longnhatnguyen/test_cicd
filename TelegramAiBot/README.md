@@ -45,4 +45,5 @@ Luc dau nen dung polling cho de test. Khi bot chay on dinh, ban co the doi qua `
 
 - Bot tu tao 2 bang `telegram_chat_sessions` va `telegram_messages` neu chua co
 - Trang thai da dang nhap va lich su chat duoc luu trong PostgreSQL
-- Moi lan goi AI, bot chi nap lai mot doan hoi thoai ngan de tiet kiem RAM va token
+- Mac dinh bot nap lai `24` message gan nhat va giu toi da `30` message moi chat
+- Co the doi bang bien moi truong `MAX_CONVERSATION_MESSAGES` va `STORED_MESSAGE_LIMIT`
