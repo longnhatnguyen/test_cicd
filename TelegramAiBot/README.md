@@ -18,7 +18,7 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 - `CHART_ANALYSIS_INTERVALS`: danh sach timeframe da khung, mac dinh `M5,M15,H1,H4`
 - `CHART_ANALYSIS_PERIOD_MINUTES`: chu ky phan tich, mac dinh `5`
 - `CHART_ANALYSIS_SEND_NO_TRADE`: gui ca ket qua dung ngoai, mac dinh `false`
-- `CHART_CAPTURE_TIMEOUT_SECONDS`: timeout chup chart, mac dinh `45`
+- `CHART_CAPTURE_TIMEOUT_SECONDS`: timeout chup chart, mac dinh `90`
 - `CHROMIUM_PATH`: duong dan Chromium, trong Docker mac dinh `/usr/bin/chromium`
 
 ## Chay local hoac tren VPS

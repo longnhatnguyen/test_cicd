@@ -181,7 +181,7 @@ internal sealed record BotConfig(
                 ?? Path.Combine(AppContext.BaseDirectory, "scripts", "capture-tradingview-chart.js"),
             ChartCaptureOutputDirectory: Environment.GetEnvironmentVariable("CHART_CAPTURE_OUTPUT_DIRECTORY")?.Trim()
                 ?? Path.GetTempPath(),
-            ChartCaptureTimeoutSeconds: ReadInt("CHART_CAPTURE_TIMEOUT_SECONDS", 45),
+            ChartCaptureTimeoutSeconds: ReadInt("CHART_CAPTURE_TIMEOUT_SECONDS", 90),
             ChartAnalysisEnabled: ReadBool("CHART_ANALYSIS_ENABLED", false),
             ChartAnalysisChatId: ReadLong("CHART_ANALYSIS_CHAT_ID"),
             ChartAnalysisUrl: Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim() ?? string.Empty,
@@ -513,8 +513,10 @@ internal sealed class ChartAnalysisWatcher(
 
             foreach (var request in requests)
             {
+                Console.WriteLine($"[{DateTimeOffset.UtcNow:u}] Capturing chart {request.Symbol} {request.Interval}.");
                 var screenshotPath = await chartCapture.CaptureAsync(request, cancellationToken);
                 screenshots.Add(new ChartImage(request, screenshotPath));
+                Console.WriteLine($"[{DateTimeOffset.UtcNow:u}] Captured chart {request.Symbol} {request.Interval}.");
             }
 
             await telegram.SendChatActionAsync(chatId, "typing", cancellationToken);
@@ -781,6 +783,9 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
           SIGNAL: NO_TRADE
         - Chỉ dùng SIGNAL: ENTRY khi có setup rõ, có đủ điểm vào lệnh, SL, TP, invalidation và có sự đồng thuận hợp lý giữa khung lớn và khung vào lệnh.
         - Nếu xu hướng khung lớn và khung nhỏ mâu thuẫn, giá đang ở giữa range, SL không rõ, RR kém, hoặc ảnh không rõ thì dùng SIGNAL: NO_TRADE.
+        - Chỉ tìm kèo ngắn/scalp trong ngày, ưu tiên điểm vào trên M5/M15.
+        - Với XAUUSD, chỉ nhận setup nếu SL cách điểm vào lệnh không quá khoảng 10 giá và TP mục tiêu gần, thực tế cho tài khoản vốn nhỏ.
+        - Nếu setup đúng kỹ thuật nhưng SL hoặc TP cần xa hơn 10 giá, hãy dùng SIGNAL: NO_TRADE.
         - Không đưa lời khuyên tài chính chắc chắn, không bảo đảm lợi nhuận.
         - Chỉ đưa setup theo kịch bản xác suất.
         - Ưu tiên quản trị rủi ro: mọi lệnh phải có invalidation rõ ràng.
@@ -790,7 +795,7 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         - Khung lớn: xác định bias/xu hướng, vùng cung cầu, hỗ trợ, kháng cự.
         - Khung trung: xác định cấu trúc, pullback, breakout hoặc retest.
         - Khung nhỏ: chỉ dùng để canh entry nếu bias lớn ủng hộ.
-        - Nếu có setup, nêu rõ hướng LONG/SHORT, điểm vào lệnh, stop loss, take profit, RR ước tính, điều kiện xác nhận và điều kiện vô hiệu.
+        - Nếu có setup, nêu rõ hướng LONG/SHORT, điểm vào lệnh, stop loss, take profit gần, RR ước tính, điều kiện xác nhận và điều kiện vô hiệu.
 
         Format:
         SIGNAL:
@@ -817,6 +822,7 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         - Không đưa lời khuyên tài chính chắc chắn, không bảo đảm lợi nhuận.
         - Chỉ đưa setup theo kịch bản xác suất.
         - Nếu có setup, nêu rõ: xu hướng, hỗ trợ/kháng cự, điểm vào lệnh, stop loss, take profit, điều kiện xác nhận, điều kiện vô hiệu.
+        - Chỉ tìm kèo ngắn/scalp trong ngày. Với XAUUSD, bỏ qua setup nếu SL cách điểm vào lệnh quá khoảng 10 giá hoặc TP mục tiêu quá xa.
         - Nếu không có setup đẹp, hãy nói "Đứng ngoài" và nêu lý do.
         - Ưu tiên quản trị rủi ro: mỗi lệnh nên có invalidation rõ ràng.
 
