@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -14,6 +15,13 @@ await store.InitializeAsync(CancellationToken.None);
 var telegram = new TelegramClient(httpClient, config);
 var ai = new OpenAiClient(httpClient, config);
 var accessControl = new AccessControl(config, store);
+var chartCapture = new TradingViewChartCapture(config);
+var chartWatcher = new ChartAnalysisWatcher(config, telegram, chartCapture, ai);
+
+if (config.ChartAnalysisEnabled)
+{
+    _ = chartWatcher.RunAsync(CancellationToken.None);
+}
 
 Console.WriteLine($"[{DateTimeOffset.UtcNow:u}] Telegram AI bot started.");
 Console.WriteLine($"Polling chat updates with model '{config.OpenAiModel}'.");
@@ -57,10 +65,59 @@ while (true)
                 continue;
             }
 
+            if (messageText.Equals("/chatid", StringComparison.OrdinalIgnoreCase))
+            {
+                await telegram.SendMessageAsync(chatId, $"Chat id: {chatId}", CancellationToken.None);
+                continue;
+            }
+
             if (!await accessControl.IsAuthorizedAsync(chatId, CancellationToken.None))
             {
                 var accessReply = await accessControl.TryAuthorizeAsync(chatId, messageText, CancellationToken.None);
                 await telegram.SendMessageAsync(chatId, accessReply, CancellationToken.None);
+                continue;
+            }
+
+            if (ChartCommand.TryParse(messageText, out var chartRequest))
+            {
+                await telegram.SendChatActionAsync(chatId, "upload_photo", CancellationToken.None);
+                string? screenshotPath = null;
+
+                try
+                {
+                    screenshotPath = await chartCapture.CaptureAsync(chartRequest, CancellationToken.None);
+                    await using (var screenshot = File.OpenRead(screenshotPath))
+                    {
+                        await telegram.SendPhotoAsync(
+                            chatId,
+                            screenshot,
+                            Path.GetFileName(screenshotPath),
+                            $"Chart {chartRequest.Symbol} {chartRequest.Interval}",
+                            CancellationToken.None);
+                    }
+
+                    if (chartRequest.Analyze)
+                    {
+                        await telegram.SendChatActionAsync(chatId, "typing", CancellationToken.None);
+                        var analysis = await ai.AnalyzeChartAsync(screenshotPath, chartRequest, CancellationToken.None);
+                        await telegram.SendMessageAsync(chatId, analysis, CancellationToken.None);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await telegram.SendMessageAsync(
+                        chatId,
+                        $"Khong chup duoc chart: {ex.Message}",
+                        CancellationToken.None);
+                }
+                finally
+                {
+                    if (!string.IsNullOrWhiteSpace(screenshotPath) && File.Exists(screenshotPath))
+                    {
+                        File.Delete(screenshotPath);
+                    }
+                }
+
                 continue;
             }
 
@@ -101,7 +158,17 @@ internal sealed record BotConfig(
     string PostgresConnectionString,
     int MaxConversationMessages,
     int StoredMessageLimit,
-    int MaxMessageCharactersPerTurn)
+    int MaxMessageCharactersPerTurn,
+    string ChartCaptureScriptPath,
+    string ChartCaptureOutputDirectory,
+    int ChartCaptureTimeoutSeconds,
+    bool ChartAnalysisEnabled,
+    long? ChartAnalysisChatId,
+    string ChartAnalysisUrl,
+    string ChartAnalysisSymbol,
+    IReadOnlyList<string> ChartAnalysisIntervals,
+    int ChartAnalysisPeriodMinutes,
+    bool ChartAnalysisSendNoTrade)
 {
     public static BotConfig LoadFromEnvironment()
     {
@@ -130,13 +197,55 @@ internal sealed record BotConfig(
             PostgresConnectionString: postgresConnectionString,
             MaxConversationMessages: ReadInt("MAX_CONVERSATION_MESSAGES", 24),
             StoredMessageLimit: ReadInt("STORED_MESSAGE_LIMIT", 30),
-            MaxMessageCharactersPerTurn: ReadInt("MAX_MESSAGE_CHARACTERS_PER_TURN", 800));
+            MaxMessageCharactersPerTurn: ReadInt("MAX_MESSAGE_CHARACTERS_PER_TURN", 800),
+            ChartCaptureScriptPath: Environment.GetEnvironmentVariable("CHART_CAPTURE_SCRIPT_PATH")?.Trim()
+                ?? Path.Combine(AppContext.BaseDirectory, "scripts", "capture-tradingview-chart.js"),
+            ChartCaptureOutputDirectory: Environment.GetEnvironmentVariable("CHART_CAPTURE_OUTPUT_DIRECTORY")?.Trim()
+                ?? Path.GetTempPath(),
+            ChartCaptureTimeoutSeconds: ReadInt("CHART_CAPTURE_TIMEOUT_SECONDS", 45),
+            ChartAnalysisEnabled: ReadBool("CHART_ANALYSIS_ENABLED", false),
+            ChartAnalysisChatId: ReadLong("CHART_ANALYSIS_CHAT_ID"),
+            ChartAnalysisUrl: Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim() ?? string.Empty,
+            ChartAnalysisSymbol: TradingViewSymbolResolver.Resolve(
+                Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim(),
+                Environment.GetEnvironmentVariable("CHART_ANALYSIS_SYMBOL")?.Trim() ?? "OANDA:XAUUSD"),
+            ChartAnalysisIntervals: ReadIntervals(),
+            ChartAnalysisPeriodMinutes: ReadInt("CHART_ANALYSIS_PERIOD_MINUTES", 5),
+            ChartAnalysisSendNoTrade: ReadBool("CHART_ANALYSIS_SEND_NO_TRADE", false));
     }
 
     private static int ReadInt(string variableName, int fallbackValue)
     {
         var raw = Environment.GetEnvironmentVariable(variableName)?.Trim();
         return int.TryParse(raw, out var parsed) && parsed > 0 ? parsed : fallbackValue;
+    }
+
+    private static bool ReadBool(string variableName, bool fallbackValue)
+    {
+        var raw = Environment.GetEnvironmentVariable(variableName)?.Trim();
+        return bool.TryParse(raw, out var parsed) ? parsed : fallbackValue;
+    }
+
+    private static long? ReadLong(string variableName)
+    {
+        var raw = Environment.GetEnvironmentVariable(variableName)?.Trim();
+        return long.TryParse(raw, out var parsed) ? parsed : null;
+    }
+
+    private static IReadOnlyList<string> ReadIntervals()
+    {
+        var raw = Environment.GetEnvironmentVariable("CHART_ANALYSIS_INTERVALS")?.Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            raw = Environment.GetEnvironmentVariable("CHART_ANALYSIS_INTERVAL")?.Trim() ?? "M5,M15,H1,H4";
+        }
+
+        var intervals = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(ChartCommand.NormalizeInterval)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return intervals.Length > 0 ? intervals : ["5", "15", "60", "240"];
     }
 }
 
@@ -330,6 +439,274 @@ internal sealed class PostgresConversationStore(BotConfig config) : IAsyncDispos
 
 internal sealed record ConversationTurn(string Role, string Content);
 
+internal sealed record ChartRequest(string Symbol, string Interval, bool Analyze = false);
+
+internal sealed record ChartImage(ChartRequest Request, string Path);
+
+internal static class ChartCommand
+{
+    public static bool TryParse(string messageText, out ChartRequest request)
+    {
+        request = new ChartRequest("OANDA:XAUUSD", "60");
+
+        if (!messageText.StartsWith("/chart", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var parts = messageText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var analyze = parts.Any(IsAnalyzeToken);
+        var values = parts.Skip(1).Where(part => !IsAnalyzeToken(part)).ToArray();
+        var symbol = values.Length >= 1 ? TradingViewSymbolResolver.Resolve(values[0], values[0]) : request.Symbol;
+        var interval = values.Length >= 2 ? NormalizeInterval(values[1]) : request.Interval;
+
+        request = new ChartRequest(symbol, interval, analyze);
+        return true;
+    }
+
+    public static string NormalizeInterval(string input)
+    {
+        var value = input.Trim().ToUpperInvariant();
+        return value switch
+        {
+            "M1" => "1",
+            "M5" => "5",
+            "M15" => "15",
+            "M30" => "30",
+            "H1" => "60",
+            "H4" => "240",
+            "D1" => "D",
+            "W1" => "W",
+            _ => value
+        };
+    }
+
+    private static bool IsAnalyzeToken(string part)
+        => part.Equals("analyze", StringComparison.OrdinalIgnoreCase) ||
+           part.Equals("phan-tich", StringComparison.OrdinalIgnoreCase) ||
+           part.Equals("pt", StringComparison.OrdinalIgnoreCase);
+}
+
+internal static class TradingViewSymbolResolver
+{
+    public static string Resolve(string? tradingViewUrlOrSymbol, string fallbackSymbol)
+    {
+        if (string.IsNullOrWhiteSpace(tradingViewUrlOrSymbol))
+        {
+            return fallbackSymbol;
+        }
+
+        var trimmed = tradingViewUrlOrSymbol.Trim();
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+        {
+            return trimmed;
+        }
+
+        var query = uri.Query.TrimStart('?');
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length != 2 || !parts[0].Equals("symbol", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var symbol = Uri.UnescapeDataString(parts[1]).Trim();
+            return string.IsNullOrWhiteSpace(symbol) ? fallbackSymbol : symbol;
+        }
+
+        return fallbackSymbol;
+    }
+}
+
+internal sealed class TradingViewChartCapture(BotConfig config)
+{
+    public async Task<string> CaptureAsync(ChartRequest request, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(config.ChartCaptureOutputDirectory);
+
+        var outputPath = Path.Combine(
+            config.ChartCaptureOutputDirectory,
+            $"tradingview-{SanitizeFileName(request.Symbol)}-{SanitizeFileName(request.Interval)}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.png");
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(config.ChartCaptureTimeoutSeconds));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+
+        var scriptPath = Path.GetFullPath(config.ChartCaptureScriptPath);
+        if (!File.Exists(scriptPath))
+        {
+            throw new FileNotFoundException("Khong tim thay script chup chart.", scriptPath);
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "node",
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false
+        };
+        startInfo.ArgumentList.Add(scriptPath);
+        startInfo.ArgumentList.Add("--symbol");
+        startInfo.ArgumentList.Add(request.Symbol);
+        startInfo.ArgumentList.Add("--interval");
+        startInfo.ArgumentList.Add(request.Interval);
+        startInfo.ArgumentList.Add("--output");
+        startInfo.ArgumentList.Add(outputPath);
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Khong start duoc Node process.");
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(linked.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(linked.Token);
+
+        try
+        {
+            await process.WaitForExitAsync(linked.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            TryKill(process);
+            throw new TimeoutException($"Qua {config.ChartCaptureTimeoutSeconds}s van chua chup xong chart.");
+        }
+
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? stdout.Trim() : stderr.Trim());
+        }
+
+        if (!File.Exists(outputPath))
+        {
+            throw new InvalidOperationException("Script chay xong nhung khong tao file anh.");
+        }
+
+        return outputPath;
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var builder = new StringBuilder(value.Length);
+
+        foreach (var character in value)
+        {
+            builder.Append(invalid.Contains(character) ? '-' : character);
+        }
+
+        return builder.ToString();
+    }
+
+    private static void TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // Best effort cleanup for timed-out browser captures.
+        }
+    }
+}
+
+internal sealed class ChartAnalysisWatcher(
+    BotConfig config,
+    TelegramClient telegram,
+    TradingViewChartCapture chartCapture,
+    OpenAiClient ai)
+{
+    public async Task RunAsync(CancellationToken cancellationToken)
+    {
+        if (config.ChartAnalysisChatId is not long chatId)
+        {
+            Console.Error.WriteLine("CHART_ANALYSIS_ENABLED=true but CHART_ANALYSIS_CHAT_ID is missing.");
+            return;
+        }
+
+        var requests = config.ChartAnalysisIntervals
+            .Select(interval => new ChartRequest(config.ChartAnalysisSymbol, interval, Analyze: true))
+            .ToArray();
+        var period = TimeSpan.FromMinutes(config.ChartAnalysisPeriodMinutes);
+        var intervalText = string.Join(",", requests.Select(request => request.Interval));
+
+        Console.WriteLine(
+            $"[{DateTimeOffset.UtcNow:u}] Chart watcher started for {config.ChartAnalysisSymbol} [{intervalText}] every {period.TotalMinutes:0} minutes.");
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await RunOnceAsync(chatId, requests, cancellationToken);
+            await Task.Delay(period, cancellationToken);
+        }
+    }
+
+    private async Task RunOnceAsync(long chatId, IReadOnlyList<ChartRequest> requests, CancellationToken cancellationToken)
+    {
+        var screenshots = new List<ChartImage>();
+
+        try
+        {
+            await telegram.SendChatActionAsync(chatId, "upload_photo", cancellationToken);
+
+            foreach (var request in requests)
+            {
+                var screenshotPath = await chartCapture.CaptureAsync(request, cancellationToken);
+                screenshots.Add(new ChartImage(request, screenshotPath));
+            }
+
+            await telegram.SendChatActionAsync(chatId, "typing", cancellationToken);
+            var analysis = await ai.AnalyzeChartsAsync(screenshots, cancellationToken);
+
+            if (!ChartSignalParser.HasEntrySignal(analysis) && !config.ChartAnalysisSendNoTrade)
+            {
+                Console.WriteLine($"[{DateTimeOffset.UtcNow:u}] No chart entry signal.");
+                return;
+            }
+
+            foreach (var chartImage in screenshots)
+            {
+                await using var screenshot = File.OpenRead(chartImage.Path);
+                await telegram.SendPhotoAsync(
+                    chatId,
+                    screenshot,
+                    Path.GetFileName(chartImage.Path),
+                    $"Chart {chartImage.Request.Symbol} {chartImage.Request.Interval}",
+                    cancellationToken);
+            }
+
+            await telegram.SendMessageAsync(chatId, analysis, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[{DateTimeOffset.UtcNow:u}] Chart watcher error: {ex.Message}");
+            await telegram.SendMessageAsync(chatId, $"Chart watcher loi: {ex.Message}", cancellationToken);
+        }
+        finally
+        {
+            foreach (var screenshot in screenshots)
+            {
+                if (File.Exists(screenshot.Path))
+                {
+                    File.Delete(screenshot.Path);
+                }
+            }
+        }
+    }
+}
+
+internal static class ChartSignalParser
+{
+    public static bool HasEntrySignal(string analysis)
+        => analysis.Split('\n')
+            .Take(6)
+            .Any(line => line.Contains("SIGNAL:", StringComparison.OrdinalIgnoreCase) &&
+                         line.Contains("ENTRY", StringComparison.OrdinalIgnoreCase));
+}
+
 internal sealed class TelegramClient(HttpClient httpClient, BotConfig config)
 {
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
@@ -377,6 +754,27 @@ internal sealed class TelegramClient(HttpClient httpClient, BotConfig config)
             text = text.Length > 4000 ? text[..4000] : text
         }, cancellationToken);
 
+    public async Task SendPhotoAsync(
+        long chatId,
+        Stream photo,
+        string fileName,
+        string caption,
+        CancellationToken cancellationToken)
+    {
+        var url = $"{config.TelegramApiBase}/bot{config.TelegramBotToken}/sendPhoto";
+        using var form = new MultipartFormDataContent
+        {
+            { new StringContent(chatId.ToString()), "chat_id" },
+            { new StringContent(caption), "caption" }
+        };
+        using var photoContent = new StreamContent(photo);
+        photoContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(photoContent, "photo", fileName);
+
+        using var response = await httpClient.PostAsync(url, form, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task PostWithoutResultAsync(string method, object payloadObject, CancellationToken cancellationToken)
     {
         var url = $"{config.TelegramApiBase}/bot{config.TelegramBotToken}/{method}";
@@ -418,6 +816,81 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         return ExtractTextReply(raw) ?? "AI khong tra ve noi dung hop le.";
     }
 
+    public async Task<string> AnalyzeChartAsync(
+        string imagePath,
+        ChartRequest request,
+        CancellationToken cancellationToken)
+        => await AnalyzeChartsAsync([new ChartImage(request, imagePath)], cancellationToken);
+
+    public async Task<string> AnalyzeChartsAsync(
+        IReadOnlyList<ChartImage> chartImages,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(config.OpenAiApiKey))
+        {
+            return "Da chup duoc chart, nhung chua co OPENAI_API_KEY de phan tich anh.";
+        }
+
+        if (chartImages.Count == 0)
+        {
+            return "Khong co anh chart de phan tich.";
+        }
+
+        var contentItems = new List<object>
+        {
+            new
+            {
+                type = "input_text",
+                text = BuildChartAnalysisPrompt(chartImages.Select(image => image.Request).ToArray())
+            }
+        };
+
+        foreach (var chartImage in chartImages)
+        {
+            var imageBase64 = Convert.ToBase64String(await File.ReadAllBytesAsync(chartImage.Path, cancellationToken));
+            contentItems.Add(new
+            {
+                type = "input_text",
+                text = $"Anh chart timeframe {chartImage.Request.Interval} cho {chartImage.Request.Symbol}."
+            });
+            contentItems.Add(new
+            {
+                type = "input_image",
+                image_url = $"data:image/png;base64,{imageBase64}",
+                detail = "high"
+            });
+        }
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.OpenAiApiBase}/responses");
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", config.OpenAiApiKey);
+        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            model = config.OpenAiModel,
+            input = new object[]
+            {
+                new
+                {
+                    role = "user",
+                    content = contentItems
+                }
+            }
+        });
+
+        httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI API error {(int)response.StatusCode}: {raw}");
+        }
+
+        return ExtractTextReply(raw) ?? "AI khong tra ve phan tich hop le.";
+    }
+
     private string BuildInput(IReadOnlyList<ConversationTurn> history)
     {
         var builder = new StringBuilder();
@@ -437,6 +910,72 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
 
         return builder.ToString();
     }
+
+    private static string BuildChartAnalysisPrompt(IReadOnlyList<ChartRequest> requests)
+    {
+        var symbol = requests[0].Symbol;
+        var intervals = string.Join(", ", requests.Select(request => request.Interval));
+
+        return $"""
+        Ban la tro ly phan tich ky thuat da khung thoi gian cho chart {symbol}.
+        Cac anh chart duoc cung cap theo timeframe: {intervals}.
+        Doc tat ca anh chart va tra loi bang tieng Viet, ngan gon, co cau truc.
+
+        Luat quyet dinh:
+        - Bat dau cau tra loi bang dung mot trong hai dong:
+          SIGNAL: ENTRY
+          SIGNAL: NO_TRADE
+        - Chi dung SIGNAL: ENTRY khi co setup ro, co entry/SL/TP/invalidation va co su dong thuan hop ly giua khung lon va khung vao lenh.
+        - Neu xu huong khung lon va khung nho mau thuan, gia dang o giua range, SL khong ro, RR kem, hoac anh khong ro thi dung SIGNAL: NO_TRADE.
+        - Khong dua loi khuyen tai chinh chac chan, khong bao dam loi nhuan.
+        - Chi dua setup theo kich ban xac suat.
+        - Uu tien quan tri rui ro: moi lenh phai co invalidation ro rang.
+        - Khong tu dat lenh, khong noi "chac thang".
+
+        Cach phan tich:
+        - Khung lon: xac dinh bias/xu huong, vung cung cau ho tro khang cu.
+        - Khung trung: xac dinh cau truc, pullback/breakout/retest.
+        - Khung nho: chi dung de canh entry neu bias lon ung ho.
+        - Neu co setup, neu ro huong LONG/SHORT, entry zone, stop loss, take profit, RR uoc tinh, dieu kien xac nhan va dieu kien vo hieu.
+
+        Format:
+        SIGNAL:
+        HUONG:
+        DA KHUNG:
+        VUNG QUAN TRONG:
+        SETUP:
+        ENTRY:
+        SL:
+        TP:
+        RR:
+        INVALIDATION:
+        GHI CHU RUI RO:
+        """;
+    }
+
+    private static string BuildChartAnalysisPrompt(ChartRequest request)
+        => $"""
+        Ban la tro ly phan tich ky thuat cho chart {request.Symbol} timeframe {request.Interval}.
+        Doc anh chart duoc cung cap va tra loi bang tieng Viet, ngan gon, co cau truc.
+
+        Yeu cau:
+        - Neu anh khong ro gia/timeframe/nen/indicator thi noi ro khong du du lieu.
+        - Khong dua loi khuyen tai chinh chac chan, khong bao dam loi nhuan.
+        - Chi dua setup theo kich ban xac suat.
+        - Neu co setup, neu ro: xu huong, ho tro/khang cu, vung entry tiem nang, stop loss, take profit, dieu kien xac nhan, dieu kien vo hieu.
+        - Neu khong co setup dep, hay noi "Dung ngoai" va neu ly do.
+        - Uu tien quan tri rui ro: moi lenh nen co invalidation ro rang.
+
+        Format:
+        XU HUONG:
+        VUNG QUAN TRONG:
+        SETUP:
+        ENTRY:
+        SL:
+        TP:
+        INVALIDATION:
+        GHI CHU RUI RO:
+        """;
 
     private static string? ExtractTextReply(string rawJson)
     {

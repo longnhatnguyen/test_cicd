@@ -11,6 +11,16 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 - `OPENAI_MODEL`: tuy chon, mac dinh `gpt-4.1-mini`
 - `OPENAI_SYSTEM_PROMPT`: tuy chon
 - `OPENAI_API_BASE`: tuy chon, mac dinh `https://api.openai.com/v1`
+- `CHART_ANALYSIS_ENABLED`: bat job chup va phan tich chart dinh ky, mac dinh `false`
+- `CHART_ANALYSIS_CHAT_ID`: Telegram chat id nhan anh va phan tich
+- `CHART_ANALYSIS_URL`: link TradingView public, bot se boc query `symbol`
+- `CHART_ANALYSIS_SYMBOL`: symbol TradingView, mac dinh `OANDA:XAUUSD`
+- `CHART_ANALYSIS_INTERVAL`: timeframe cu, mac dinh `M5`
+- `CHART_ANALYSIS_INTERVALS`: danh sach timeframe da khung, mac dinh `M5,M15,H1,H4`
+- `CHART_ANALYSIS_PERIOD_MINUTES`: chu ky phan tich, mac dinh `5`
+- `CHART_ANALYSIS_SEND_NO_TRADE`: gui ca ket qua dung ngoai, mac dinh `false`
+- `CHART_CAPTURE_TIMEOUT_SECONDS`: timeout chup chart, mac dinh `45`
+- `CHROMIUM_PATH`: duong dan Chromium, trong Docker mac dinh `/usr/bin/chromium`
 
 ## Chay local hoac tren VPS
 
@@ -47,3 +57,71 @@ Luc dau nen dung polling cho de test. Khi bot chay on dinh, ban co the doi qua `
 - Trang thai da dang nhap va lich su chat duoc luu trong PostgreSQL
 - Mac dinh bot nap lai `24` message gan nhat va giu toi da `30` message moi chat
 - Co the doi bang bien moi truong `MAX_CONVERSATION_MESSAGES` va `STORED_MESSAGE_LIMIT`
+
+## Chup va phan tich chart TradingView
+
+Lay chat id:
+
+```text
+/chatid
+```
+
+Chup chart thu cong:
+
+```text
+/chart OANDA:XAUUSD H1
+/chart https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD H1
+```
+
+Chup va phan tich thu cong:
+
+```text
+/chart OANDA:XAUUSD M15 analyze
+```
+
+Bat job tu dong 5 phut/lan tren server:
+
+```bash
+export CHART_ANALYSIS_ENABLED=true
+export CHART_ANALYSIS_CHAT_ID="<telegram-chat-id>"
+export CHART_ANALYSIS_URL="https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD"
+export CHART_ANALYSIS_INTERVALS="M5,M15,H1,H4"
+export CHART_ANALYSIS_PERIOD_MINUTES=5
+export CHART_ANALYSIS_SEND_NO_TRADE=false
+```
+
+Bot dung Chromium headless trong Docker de mo TradingView public chart, chup anh tung timeframe, gui nhieu anh vao OpenAI vision model, roi tra ve vung entry/SL/TP theo kich ban xac suat.
+
+Ket qua AI bat dau bang `SIGNAL: ENTRY` hoac `SIGNAL: NO_TRADE`. Job tu dong chi gui anh va tin hieu vao Telegram khi co `SIGNAL: ENTRY`, tru khi `CHART_ANALYSIS_SEND_NO_TRADE=true`. Neu TradingView chan IP/user-agent, bot se bao loi thay vi tu dat lenh.
+
+### GitHub Secrets can co
+
+Neu repo da co cac secret nen tang sau thi bot da du dieu kien deploy va goi AI:
+
+```text
+GHCR_READ_TOKEN
+OPENAI_API_KEY
+POSTGRES_CONNECTION_STRING
+SERVER_HOST
+SERVER_PORT
+SERVER_SSH_PASSWORD
+SERVER_USER
+TELEGRAM_ACCESS_PASSWORD
+TELEGRAM_BOT_TOKEN
+```
+
+De bat job tu dong chup va phan tich chart, them toi thieu:
+
+```text
+CHART_ANALYSIS_ENABLED=true
+CHART_ANALYSIS_CHAT_ID=<telegram-chat-id>
+```
+
+Cac secret chart ben duoi khong bat buoc vi code da co gia tri mac dinh:
+
+```text
+CHART_ANALYSIS_URL=https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD
+CHART_ANALYSIS_INTERVALS=M5,M15,H1,H4
+CHART_ANALYSIS_PERIOD_MINUTES=5
+CHART_ANALYSIS_SEND_NO_TRADE=false
+```

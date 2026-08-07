@@ -1,0 +1,9 @@
+{
+  "name": "telegram-ai-bot",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Runtime helper scripts for TelegramAiBot.",
+  "dependencies": {
+    "playwright-core": "1.56.1"
+  }
+}
