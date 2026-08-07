@@ -14,7 +14,7 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 - `CHART_ANALYSIS_CHAT_ID`: Telegram chat id nhan tin hieu
 - `CHART_ANALYSIS_URL`: link TradingView public, bot se boc query `symbol`
 - `CHART_ANALYSIS_SYMBOL`: symbol TradingView, mac dinh `OANDA:XAUUSD`
-- `CHART_ANALYSIS_DATA_SYMBOL`: symbol du lieu Yahoo Finance, mac dinh `GC=F`
+- `CHART_ANALYSIS_DATA_SYMBOL`: symbol du lieu, mac dinh `BINANCE:XAUTUSDT`; cung ho tro Yahoo nhu `GC=F`
 - `CHART_ANALYSIS_INTERVAL`: timeframe cu, mac dinh `M5`
 - `CHART_ANALYSIS_INTERVALS`: danh sach timeframe da khung, mac dinh `M5,M15,H1,H4`
 - `CHART_ANALYSIS_PERIOD_MINUTES`: chu ky phan tich, mac dinh `5`
@@ -84,7 +84,7 @@ Bat job tu dong 5 phut/lan tren server:
 export CHART_ANALYSIS_ENABLED=true
 export CHART_ANALYSIS_CHAT_ID="<telegram-chat-id>"
 export CHART_ANALYSIS_URL="https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD"
-export CHART_ANALYSIS_DATA_SYMBOL="GC=F"
+export CHART_ANALYSIS_DATA_SYMBOL="BINANCE:XAUTUSDT"
 export CHART_ANALYSIS_INTERVALS="M5,M15,H1,H4"
 export CHART_ANALYSIS_PERIOD_MINUTES=5
 export CHART_ANALYSIS_SEND_NO_TRADE=false
@@ -93,7 +93,7 @@ export CHART_ANALYSIS_MAX_RISK_PRICE=10
 export CHART_ANALYSIS_MAX_REWARD_PRICE=10
 ```
 
-Bot lay OHLC tu Yahoo Finance de phan tich nhe hon, khong mo Chromium va khong chup TradingView nua. Mac dinh bot hien thi `OANDA:XAUUSD` nhung dung `GC=F` lam proxy du lieu vang intraday.
+Bot lay OHLC tu Binance/Yahoo de phan tich nhe hon, khong mo Chromium va khong chup TradingView nua. Mac dinh bot hien thi `OANDA:XAUUSD` nhung dung `BINANCE:XAUTUSDT` lam proxy du lieu vang intraday de tranh loi Yahoo `429 Too Many Requests` tren VPS.
 
 Job tu dong chi gui tin hieu vao Telegram khi co `SIGNAL: ENTRY`, tru khi `CHART_ANALYSIS_SEND_NO_TRADE=true`. Neu khong co setup ngan ro, bot im lang de tranh spam. Mac dinh job chart khong goi OpenAI; bat `CHART_ANALYSIS_USE_AI=true` neu muon AI viet lai phan giai thich khi da co entry.
 
@@ -123,7 +123,7 @@ Cac secret chart ben duoi khong bat buoc vi code da co gia tri mac dinh:
 
 ```text
 CHART_ANALYSIS_URL=https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD
-CHART_ANALYSIS_DATA_SYMBOL=GC=F
+CHART_ANALYSIS_DATA_SYMBOL=BINANCE:XAUTUSDT
 CHART_ANALYSIS_INTERVALS=M5,M15,H1,H4
 CHART_ANALYSIS_PERIOD_MINUTES=5
 CHART_ANALYSIS_SEND_NO_TRADE=false

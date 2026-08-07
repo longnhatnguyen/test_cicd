@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,7 +12,7 @@ var accessStore = new InMemoryAccessStore();
 var telegram = new TelegramClient(httpClient, config);
 var ai = new OpenAiClient(httpClient, config);
 var accessControl = new AccessControl(config, accessStore);
-var marketData = new YahooMarketDataClient(httpClient, config);
+var marketData = new MarketDataClient(httpClient, config);
 var chartWatcher = new ChartAnalysisWatcher(config, telegram, marketData, ai);
 
 if (config.ChartAnalysisEnabled)
@@ -161,7 +162,7 @@ internal sealed record BotConfig(
             ChartAnalysisSymbol: TradingViewSymbolResolver.Resolve(
                 Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim(),
                 Environment.GetEnvironmentVariable("CHART_ANALYSIS_SYMBOL")?.Trim() ?? "OANDA:XAUUSD"),
-            ChartAnalysisDataSymbol: Environment.GetEnvironmentVariable("CHART_ANALYSIS_DATA_SYMBOL")?.Trim() ?? "GC=F",
+            ChartAnalysisDataSymbol: Environment.GetEnvironmentVariable("CHART_ANALYSIS_DATA_SYMBOL")?.Trim() ?? "BINANCE:XAUTUSDT",
             ChartAnalysisIntervals: ReadIntervals(),
             ChartAnalysisPeriodMinutes: ReadInt("CHART_ANALYSIS_PERIOD_MINUTES", 5),
             ChartAnalysisSendNoTrade: ReadBool("CHART_ANALYSIS_SEND_NO_TRADE", false),
@@ -359,9 +360,23 @@ internal static class TradingViewSymbolResolver
     }
 }
 
-internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig config)
+internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
 {
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
+    private readonly object _cacheLock = new();
+    private readonly Dictionary<string, CachedMarketResponse> _responseCache = [];
+
     public async Task<MarketSnapshot> GetSnapshotAsync(string interval, CancellationToken cancellationToken)
+    {
+        if (TryGetBinanceSymbol(config.ChartAnalysisDataSymbol, out var binanceSymbol))
+        {
+            return await GetBinanceSnapshotAsync(binanceSymbol, interval, cancellationToken);
+        }
+
+        return await GetYahooSnapshotAsync(interval, cancellationToken);
+    }
+
+    private async Task<MarketSnapshot> GetYahooSnapshotAsync(string interval, CancellationToken cancellationToken)
     {
         var normalizedInterval = ChartCommand.NormalizeInterval(interval);
         var yahooInterval = normalizedInterval == "240" ? "60m" : ToYahooInterval(normalizedInterval);
@@ -370,14 +385,7 @@ internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig con
             $"https://query1.finance.yahoo.com/v8/finance/chart/{Uri.EscapeDataString(config.ChartAnalysisDataSymbol)}" +
             $"?range={range}&interval={yahooInterval}";
 
-        using var response = await httpClient.GetAsync(url, cancellationToken);
-        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"Yahoo data error {(int)response.StatusCode}: {raw}");
-        }
-
+        var raw = await GetRawChartAsync(url, cancellationToken);
         var candles = ParseCandles(raw);
         if (normalizedInterval == "240")
         {
@@ -392,6 +400,82 @@ internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig con
         return MarketSnapshot.Create(config.ChartAnalysisSymbol, config.ChartAnalysisDataSymbol, normalizedInterval, candles);
     }
 
+    private async Task<MarketSnapshot> GetBinanceSnapshotAsync(
+        string binanceSymbol,
+        string interval,
+        CancellationToken cancellationToken)
+    {
+        var normalizedInterval = ChartCommand.NormalizeInterval(interval);
+        var binanceInterval = ToBinanceInterval(normalizedInterval);
+        var url =
+            $"https://api.binance.com/api/v3/klines?symbol={Uri.EscapeDataString(binanceSymbol)}" +
+            $"&interval={binanceInterval}&limit=500";
+
+        var raw = await GetRawChartAsync(url, cancellationToken);
+        var candles = ParseBinanceCandles(raw);
+
+        if (candles.Count < 60)
+        {
+            throw new InvalidOperationException($"Không đủ dữ liệu BINANCE:{binanceSymbol} {normalizedInterval}.");
+        }
+
+        return MarketSnapshot.Create(config.ChartAnalysisSymbol, $"BINANCE:{binanceSymbol}", normalizedInterval, candles);
+    }
+
+    private async Task<string> GetRawChartAsync(string url, CancellationToken cancellationToken)
+    {
+        lock (_cacheLock)
+        {
+            if (_responseCache.TryGetValue(url, out var cached) &&
+                DateTimeOffset.UtcNow - cached.FetchedAt < CacheDuration)
+            {
+                return cached.RawJson;
+            }
+        }
+
+        var raw = await FetchRawChartWithRetryAsync(url, cancellationToken);
+
+        lock (_cacheLock)
+        {
+            _responseCache[url] = new CachedMarketResponse(DateTimeOffset.UtcNow, raw);
+        }
+
+        return raw;
+    }
+
+    private async Task<string> FetchRawChartWithRetryAsync(string url, CancellationToken cancellationToken)
+    {
+        string? lastError = null;
+
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36");
+            request.Headers.Accept.ParseAdd("application/json,text/plain,*/*");
+            request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+            request.Headers.Referrer = new Uri("https://finance.yahoo.com/");
+
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return raw;
+            }
+
+            lastError = $"Yahoo data error {(int)response.StatusCode}: {raw}";
+            var shouldRetry = (int)response.StatusCode == 429 || (int)response.StatusCode >= 500;
+            if (!shouldRetry || attempt == 3)
+            {
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(attempt * 5), cancellationToken);
+        }
+
+        throw new InvalidOperationException(lastError ?? "Yahoo data error.");
+    }
+
     private static string ToYahooInterval(string interval)
         => interval switch
         {
@@ -404,6 +488,34 @@ internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig con
             "W" => "1wk",
             _ => "15m"
         };
+
+    private static string ToBinanceInterval(string interval)
+        => interval switch
+        {
+            "1" => "1m",
+            "5" => "5m",
+            "15" => "15m",
+            "30" => "30m",
+            "60" => "1h",
+            "240" => "4h",
+            "D" => "1d",
+            "W" => "1w",
+            _ => "15m"
+        };
+
+    private static bool TryGetBinanceSymbol(string dataSymbol, out string binanceSymbol)
+    {
+        const string prefix = "BINANCE:";
+
+        if (dataSymbol.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            binanceSymbol = dataSymbol[prefix.Length..].Trim().ToUpperInvariant();
+            return !string.IsNullOrWhiteSpace(binanceSymbol);
+        }
+
+        binanceSymbol = string.Empty;
+        return false;
+    }
 
     private static IReadOnlyList<Candle> ParseCandles(string rawJson)
     {
@@ -443,6 +555,28 @@ internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig con
         return candles;
     }
 
+    private static IReadOnlyList<Candle> ParseBinanceCandles(string rawJson)
+    {
+        using var document = JsonDocument.Parse(rawJson);
+        var candles = new List<Candle>();
+
+        foreach (var item in document.RootElement.EnumerateArray())
+        {
+            candles.Add(new Candle(
+                Time: DateTimeOffset.FromUnixTimeMilliseconds(item[0].GetInt64()),
+                Open: ParseDecimal(item[1]),
+                High: ParseDecimal(item[2]),
+                Low: ParseDecimal(item[3]),
+                Close: ParseDecimal(item[4]),
+                Volume: ParseDecimal(item[5])));
+        }
+
+        return candles;
+    }
+
+    private static decimal ParseDecimal(JsonElement element)
+        => decimal.Parse(element.GetString() ?? "0", CultureInfo.InvariantCulture);
+
     private static IReadOnlyList<Candle> AggregateCandles(IReadOnlyList<Candle> candles, int groupSize)
     {
         var aggregated = new List<Candle>();
@@ -462,6 +596,8 @@ internal sealed class YahooMarketDataClient(HttpClient httpClient, BotConfig con
         return aggregated;
     }
 }
+
+internal sealed record CachedMarketResponse(DateTimeOffset FetchedAt, string RawJson);
 
 internal sealed record Candle(
     DateTimeOffset Time,
@@ -768,11 +904,13 @@ internal static class IndicatorMath
 internal sealed class ChartAnalysisWatcher(
     BotConfig config,
     TelegramClient telegram,
-    YahooMarketDataClient marketData,
+    MarketDataClient marketData,
     OpenAiClient ai)
 {
     private string? _lastSignalKey;
     private DateTimeOffset _lastSignalSentAt = DateTimeOffset.MinValue;
+    private string? _lastErrorMessage;
+    private DateTimeOffset _lastErrorSentAt = DateTimeOffset.MinValue;
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -845,12 +983,22 @@ internal sealed class ChartAnalysisWatcher(
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[{DateTimeOffset.UtcNow:u}] Data watcher error: {ex.Message}");
-            await telegram.SendMessageAsync(chatId, $"Data watcher lỗi: {ex.Message}", cancellationToken);
+
+            if (!ShouldSuppressErrorNotification(ex.Message))
+            {
+                await telegram.SendMessageAsync(chatId, $"Data watcher lỗi: {ex.Message}", cancellationToken);
+                _lastErrorMessage = ex.Message;
+                _lastErrorSentAt = DateTimeOffset.UtcNow;
+            }
         }
     }
 
     private static string BuildSignalKey(TradeSignal signal)
         => $"{signal.Direction}:{signal.EntryInterval}:{Math.Round(signal.Entry, 1)}:{Math.Round(signal.StopLoss, 1)}:{Math.Round(signal.TakeProfit, 1)}";
+
+    private bool ShouldSuppressErrorNotification(string errorMessage)
+        => _lastErrorMessage == errorMessage &&
+           DateTimeOffset.UtcNow - _lastErrorSentAt < TimeSpan.FromMinutes(30);
 }
 
 internal static class ChartSignalParser
