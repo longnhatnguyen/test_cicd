@@ -23,7 +23,6 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_ACCESS_PASSWORD: ${TELEGRAM_ACCESS_PASSWORD}
-      POSTGRES_CONNECTION_STRING: ${POSTGRES_CONNECTION_STRING}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_SYSTEM_PROMPT: ${OPENAI_SYSTEM_PROMPT:-Ban la tro ly Telegram gon gang, lich su va huu ich. Tra loi bang tieng Viet neu nguoi dung viet tieng Viet.}

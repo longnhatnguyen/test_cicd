@@ -6,7 +6,6 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 
 - `TELEGRAM_BOT_TOKEN`: token tu `@BotFather`
 - `TELEGRAM_ACCESS_PASSWORD`: mat khau can nhap truoc khi dung bot
-- `POSTGRES_CONNECTION_STRING`: chuoi ket noi PostgreSQL de luu session va lich su chat
 - `OPENAI_API_KEY`: API key de goi AI
 - `OPENAI_MODEL`: tuy chon, mac dinh `gpt-4.1-mini`
 - `OPENAI_SYSTEM_PROMPT`: tuy chon
@@ -27,7 +26,6 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 ```bash
 export TELEGRAM_BOT_TOKEN="<telegram-token>"
 export TELEGRAM_ACCESS_PASSWORD="<mat-khau-vao-bot>"
-export POSTGRES_CONNECTION_STRING="Host=host.docker.internal;Port=5432;Database=telegram_bot_db;Username=botuser;Password=<db-password>"
 export OPENAI_API_KEY="<openai-api-key>"
 export OPENAI_MODEL="gpt-4.1-mini"
 
@@ -51,12 +49,11 @@ Luc dau nen dung polling cho de test. Khi bot chay on dinh, ban co the doi qua `
 - Chi sau khi nhap dung `TELEGRAM_ACCESS_PASSWORD` thi bot moi goi AI
 - Dung `/logout` de khoa lai phien chat
 
-## Memory va PostgreSQL
+## Runtime state
 
-- Bot tu tao 2 bang `telegram_chat_sessions` va `telegram_messages` neu chua co
-- Trang thai da dang nhap va lich su chat duoc luu trong PostgreSQL
-- Mac dinh bot nap lai `24` message gan nhat va giu toi da `30` message moi chat
-- Co the doi bang bien moi truong `MAX_CONVERSATION_MESSAGES` va `STORED_MESSAGE_LIMIT`
+- Bot khong luu lich su chat
+- Bot chi giu trang thai da nhap password trong RAM cua container
+- Khi container restart, user can nhap lai `TELEGRAM_ACCESS_PASSWORD`
 
 ## Chup va phan tich chart TradingView
 
@@ -101,7 +98,6 @@ Neu repo da co cac secret nen tang sau thi bot da du dieu kien deploy va goi AI:
 ```text
 GHCR_READ_TOKEN
 OPENAI_API_KEY
-POSTGRES_CONNECTION_STRING
 SERVER_HOST
 SERVER_PORT
 SERVER_SSH_PASSWORD

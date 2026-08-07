@@ -4,17 +4,14 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Npgsql;
 
 var config = BotConfig.LoadFromEnvironment();
 using var httpClient = new HttpClient();
-await using var store = new PostgresConversationStore(config);
-
-await store.InitializeAsync(CancellationToken.None);
+var accessStore = new InMemoryAccessStore();
 
 var telegram = new TelegramClient(httpClient, config);
 var ai = new OpenAiClient(httpClient, config);
-var accessControl = new AccessControl(config, store);
+var accessControl = new AccessControl(config, accessStore);
 var chartCapture = new TradingViewChartCapture(config);
 var chartWatcher = new ChartAnalysisWatcher(config, telegram, chartCapture, ai);
 
@@ -121,8 +118,6 @@ while (true)
                 continue;
             }
 
-            await store.AppendMessageAsync(chatId, "user", messageText, CancellationToken.None);
-
             string reply;
 
             if (string.IsNullOrWhiteSpace(config.OpenAiApiKey))
@@ -132,11 +127,9 @@ while (true)
             else
             {
                 await telegram.SendChatActionAsync(chatId, "typing", CancellationToken.None);
-                var history = await store.GetRecentMessagesAsync(chatId, config.MaxConversationMessages, CancellationToken.None);
-                reply = await ai.GenerateReplyAsync(history, CancellationToken.None);
+                reply = await ai.GenerateReplyAsync(new ConversationTurn("user", messageText), CancellationToken.None);
             }
 
-            await store.AppendMessageAsync(chatId, "assistant", reply, CancellationToken.None);
             await telegram.SendMessageAsync(chatId, reply, CancellationToken.None);
         }
     }
@@ -155,10 +148,6 @@ internal sealed record BotConfig(
     string OpenAiModel,
     string SystemPrompt,
     string AccessPassword,
-    string PostgresConnectionString,
-    int MaxConversationMessages,
-    int StoredMessageLimit,
-    int MaxMessageCharactersPerTurn,
     string ChartCaptureScriptPath,
     string ChartCaptureOutputDirectory,
     int ChartCaptureTimeoutSeconds,
@@ -178,12 +167,6 @@ internal sealed record BotConfig(
             throw new InvalidOperationException("Missing TELEGRAM_BOT_TOKEN environment variable.");
         }
 
-        var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(postgresConnectionString))
-        {
-            throw new InvalidOperationException("Missing POSTGRES_CONNECTION_STRING environment variable.");
-        }
-
         return new BotConfig(
             TelegramBotToken: telegramBotToken,
             TelegramApiBase: (Environment.GetEnvironmentVariable("TELEGRAM_API_BASE")?.Trim() ?? "https://api.telegram.org").TrimEnd('/'),
@@ -194,10 +177,6 @@ internal sealed record BotConfig(
                 ?? "Ban la tro ly Telegram gon gang, lich su va huu ich. Tra loi bang tieng Viet neu nguoi dung viet tieng Viet.",
             AccessPassword: Environment.GetEnvironmentVariable("TELEGRAM_ACCESS_PASSWORD")?.Trim()
                 ?? throw new InvalidOperationException("Missing TELEGRAM_ACCESS_PASSWORD environment variable."),
-            PostgresConnectionString: postgresConnectionString,
-            MaxConversationMessages: ReadInt("MAX_CONVERSATION_MESSAGES", 24),
-            StoredMessageLimit: ReadInt("STORED_MESSAGE_LIMIT", 30),
-            MaxMessageCharactersPerTurn: ReadInt("MAX_MESSAGE_CHARACTERS_PER_TURN", 800),
             ChartCaptureScriptPath: Environment.GetEnvironmentVariable("CHART_CAPTURE_SCRIPT_PATH")?.Trim()
                 ?? Path.Combine(AppContext.BaseDirectory, "scripts", "capture-tradingview-chart.js"),
             ChartCaptureOutputDirectory: Environment.GetEnvironmentVariable("CHART_CAPTURE_OUTPUT_DIRECTORY")?.Trim()
@@ -249,7 +228,7 @@ internal sealed record BotConfig(
     }
 }
 
-internal sealed class AccessControl(BotConfig config, PostgresConversationStore store)
+internal sealed class AccessControl(BotConfig config, InMemoryAccessStore store)
 {
     public Task<bool> IsAuthorizedAsync(long chatId, CancellationToken cancellationToken)
         => store.IsAuthorizedAsync(chatId, cancellationToken);
@@ -286,155 +265,35 @@ internal sealed class AccessControl(BotConfig config, PostgresConversationStore 
     }
 }
 
-internal sealed class PostgresConversationStore(BotConfig config) : IAsyncDisposable
+internal sealed class InMemoryAccessStore
 {
-    private const string SchemaSql = """
-        CREATE TABLE IF NOT EXISTS telegram_chat_sessions (
-            chat_id BIGINT PRIMARY KEY,
-            is_authorized BOOLEAN NOT NULL DEFAULT FALSE,
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+    private readonly object _lock = new();
+    private readonly HashSet<long> _authorizedChats = [];
 
-        CREATE TABLE IF NOT EXISTS telegram_messages (
-            id BIGSERIAL PRIMARY KEY,
-            chat_id BIGINT NOT NULL REFERENCES telegram_chat_sessions(chat_id) ON DELETE CASCADE,
-            role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
-            content TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-
-        CREATE INDEX IF NOT EXISTS ix_telegram_messages_chat_id_id_desc
-            ON telegram_messages (chat_id, id DESC);
-        """;
-
-    public async Task InitializeAsync(CancellationToken cancellationToken)
+    public Task<bool> IsAuthorizedAsync(long chatId, CancellationToken cancellationToken)
     {
-        await using var connection = new NpgsqlConnection(config.PostgresConnectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(SchemaSql, connection);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    public async Task<bool> IsAuthorizedAsync(long chatId, CancellationToken cancellationToken)
-    {
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(
-            "SELECT is_authorized FROM telegram_chat_sessions WHERE chat_id = @chat_id;",
-            connection);
-        command.Parameters.AddWithValue("chat_id", chatId);
-
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return result is bool isAuthorized && isAuthorized;
-    }
-
-    public async Task SetAuthorizedAsync(long chatId, bool isAuthorized, CancellationToken cancellationToken)
-    {
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(
-            """
-            INSERT INTO telegram_chat_sessions (chat_id, is_authorized, updated_at)
-            VALUES (@chat_id, @is_authorized, NOW())
-            ON CONFLICT (chat_id) DO UPDATE
-            SET is_authorized = EXCLUDED.is_authorized,
-                updated_at = NOW();
-            """,
-            connection);
-        command.Parameters.AddWithValue("chat_id", chatId);
-        command.Parameters.AddWithValue("is_authorized", isAuthorized);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    public async Task AppendMessageAsync(long chatId, string role, string content, CancellationToken cancellationToken)
-    {
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-
-        await using (var sessionCommand = new NpgsqlCommand(
-            """
-            INSERT INTO telegram_chat_sessions (chat_id, is_authorized, updated_at)
-            VALUES (@chat_id, FALSE, NOW())
-            ON CONFLICT (chat_id) DO UPDATE
-            SET updated_at = NOW();
-            """,
-            connection))
+        lock (_lock)
         {
-            sessionCommand.Parameters.AddWithValue("chat_id", chatId);
-            await sessionCommand.ExecuteNonQueryAsync(cancellationToken);
+            return Task.FromResult(_authorizedChats.Contains(chatId));
+        }
+    }
+
+    public Task SetAuthorizedAsync(long chatId, bool isAuthorized, CancellationToken cancellationToken)
+    {
+        lock (_lock)
+        {
+            if (isAuthorized)
+            {
+                _authorizedChats.Add(chatId);
+            }
+            else
+            {
+                _authorizedChats.Remove(chatId);
+            }
         }
 
-        await using (var insertMessageCommand = new NpgsqlCommand(
-            """
-            INSERT INTO telegram_messages (chat_id, role, content)
-            VALUES (@chat_id, @role, @content);
-            """,
-            connection))
-        {
-            insertMessageCommand.Parameters.AddWithValue("chat_id", chatId);
-            insertMessageCommand.Parameters.AddWithValue("role", role);
-            insertMessageCommand.Parameters.AddWithValue("content", content);
-            await insertMessageCommand.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using var trimCommand = new NpgsqlCommand(
-            """
-            DELETE FROM telegram_messages
-            WHERE chat_id = @chat_id
-              AND id NOT IN (
-                  SELECT id
-                  FROM telegram_messages
-                  WHERE chat_id = @chat_id
-                  ORDER BY id DESC
-                  LIMIT @retain
-              );
-            """,
-            connection);
-        trimCommand.Parameters.AddWithValue("chat_id", chatId);
-        trimCommand.Parameters.AddWithValue("retain", config.StoredMessageLimit);
-        await trimCommand.ExecuteNonQueryAsync(cancellationToken);
+        return Task.CompletedTask;
     }
-
-    public async Task<IReadOnlyList<ConversationTurn>> GetRecentMessagesAsync(long chatId, int limit, CancellationToken cancellationToken)
-    {
-        var items = new List<ConversationTurn>();
-
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(
-            """
-            SELECT role, content
-            FROM (
-                SELECT role, content, id
-                FROM telegram_messages
-                WHERE chat_id = @chat_id
-                ORDER BY id DESC
-                LIMIT @limit
-            ) recent
-            ORDER BY id ASC;
-            """,
-            connection);
-        command.Parameters.AddWithValue("chat_id", chatId);
-        command.Parameters.AddWithValue("limit", limit);
-
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            items.Add(new ConversationTurn(
-                Role: reader.GetString(0),
-                Content: LimitCharacters(reader.GetString(1), config.MaxMessageCharactersPerTurn)));
-        }
-
-        return items;
-    }
-
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    private async Task<NpgsqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
-    {
-        var connection = new NpgsqlConnection(config.PostgresConnectionString);
-        await connection.OpenAsync(cancellationToken);
-        return connection;
-    }
-
-    private static string LimitCharacters(string input, int limit)
-        => input.Length <= limit ? input : input[..limit];
 }
 
 internal sealed record ConversationTurn(string Role, string Content);
@@ -791,7 +650,7 @@ internal sealed class TelegramClient(HttpClient httpClient, BotConfig config)
 
 internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
 {
-    public async Task<string> GenerateReplyAsync(IReadOnlyList<ConversationTurn> history, CancellationToken cancellationToken)
+    public async Task<string> GenerateReplyAsync(ConversationTurn currentTurn, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{config.OpenAiApiBase}/responses");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", config.OpenAiApiKey);
@@ -800,7 +659,7 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         var payload = JsonSerializer.Serialize(new
         {
             model = config.OpenAiModel,
-            input = BuildInput(history)
+            input = BuildInput(currentTurn)
         });
 
         request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -891,22 +750,17 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         return ExtractTextReply(raw) ?? "AI khong tra ve phan tich hop le.";
     }
 
-    private string BuildInput(IReadOnlyList<ConversationTurn> history)
+    private string BuildInput(ConversationTurn currentTurn)
     {
         var builder = new StringBuilder();
         builder.AppendLine("System instructions:");
         builder.AppendLine(config.SystemPrompt);
         builder.AppendLine();
-        builder.AppendLine("Conversation history:");
-
-        foreach (var turn in history)
-        {
-            var speaker = turn.Role.Equals("assistant", StringComparison.OrdinalIgnoreCase) ? "Assistant" : "User";
-            builder.AppendLine($"{speaker}: {turn.Content}");
-        }
+        builder.AppendLine("Current user message:");
+        builder.AppendLine(currentTurn.Content);
 
         builder.AppendLine();
-        builder.AppendLine("Reply to the latest user message naturally and keep continuity with the prior context.");
+        builder.AppendLine("Reply naturally without relying on prior chat history.");
 
         return builder.ToString();
     }
