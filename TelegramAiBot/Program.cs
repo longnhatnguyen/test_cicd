@@ -126,6 +126,7 @@ internal sealed record BotConfig(
     string OpenAiModel,
     string SystemPrompt,
     string AccessPassword,
+    string TwelveDataApiKey,
     bool ChartAnalysisEnabled,
     long? ChartAnalysisChatId,
     string ChartAnalysisUrl,
@@ -156,13 +157,14 @@ internal sealed record BotConfig(
                 ?? "Ban la tro ly Telegram gon gang, lich su va huu ich. Tra loi bang tieng Viet neu nguoi dung viet tieng Viet.",
             AccessPassword: Environment.GetEnvironmentVariable("TELEGRAM_ACCESS_PASSWORD")?.Trim()
                 ?? throw new InvalidOperationException("Missing TELEGRAM_ACCESS_PASSWORD environment variable."),
+            TwelveDataApiKey: Environment.GetEnvironmentVariable("TWELVE_DATA_API_KEY")?.Trim() ?? string.Empty,
             ChartAnalysisEnabled: ReadBool("CHART_ANALYSIS_ENABLED", false),
             ChartAnalysisChatId: ReadLong("CHART_ANALYSIS_CHAT_ID"),
             ChartAnalysisUrl: Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim() ?? string.Empty,
             ChartAnalysisSymbol: TradingViewSymbolResolver.Resolve(
                 Environment.GetEnvironmentVariable("CHART_ANALYSIS_URL")?.Trim(),
                 Environment.GetEnvironmentVariable("CHART_ANALYSIS_SYMBOL")?.Trim() ?? "OANDA:XAUUSD"),
-            ChartAnalysisDataSymbol: Environment.GetEnvironmentVariable("CHART_ANALYSIS_DATA_SYMBOL")?.Trim() ?? "BINANCE:XAUTUSDT",
+            ChartAnalysisDataSymbol: Environment.GetEnvironmentVariable("CHART_ANALYSIS_DATA_SYMBOL")?.Trim() ?? "TWELVEDATA:XAU/USD",
             ChartAnalysisIntervals: ReadIntervals(),
             ChartAnalysisPeriodMinutes: ReadInt("CHART_ANALYSIS_PERIOD_MINUTES", 5),
             ChartAnalysisSendNoTrade: ReadBool("CHART_ANALYSIS_SEND_NO_TRADE", false),
@@ -368,12 +370,50 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
 
     public async Task<MarketSnapshot> GetSnapshotAsync(string interval, CancellationToken cancellationToken)
     {
+        if (TryGetTwelveDataSymbol(config.ChartAnalysisDataSymbol, out var twelveDataSymbol))
+        {
+            return await GetTwelveDataSnapshotAsync(twelveDataSymbol, interval, cancellationToken);
+        }
+
+        if (TryGetCoinbaseProductId(config.ChartAnalysisDataSymbol, out var coinbaseProductId))
+        {
+            return await GetCoinbaseSnapshotAsync(coinbaseProductId, interval, cancellationToken);
+        }
+
         if (TryGetBinanceSymbol(config.ChartAnalysisDataSymbol, out var binanceSymbol))
         {
             return await GetBinanceSnapshotAsync(binanceSymbol, interval, cancellationToken);
         }
 
         return await GetYahooSnapshotAsync(interval, cancellationToken);
+    }
+
+    private async Task<MarketSnapshot> GetTwelveDataSnapshotAsync(
+        string symbol,
+        string interval,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(config.TwelveDataApiKey))
+        {
+            throw new InvalidOperationException("Missing TWELVE_DATA_API_KEY for real XAU/USD data.");
+        }
+
+        var normalizedInterval = ChartCommand.NormalizeInterval(interval);
+        var twelveDataInterval = ToTwelveDataInterval(normalizedInterval);
+        var url =
+            $"https://api.twelvedata.com/time_series?symbol={Uri.EscapeDataString(symbol)}" +
+            $"&interval={Uri.EscapeDataString(twelveDataInterval)}&outputsize=500&timezone=UTC&format=JSON" +
+            $"&apikey={Uri.EscapeDataString(config.TwelveDataApiKey)}";
+
+        var raw = await GetRawChartAsync(url, "Twelve Data", "https://twelvedata.com/", cancellationToken);
+        var candles = ParseTwelveDataCandles(raw);
+
+        if (candles.Count < 60)
+        {
+            throw new InvalidOperationException($"Không đủ dữ liệu TWELVEDATA:{symbol} {normalizedInterval}.");
+        }
+
+        return MarketSnapshot.Create(config.ChartAnalysisSymbol, $"TWELVEDATA:{symbol}", normalizedInterval, candles);
     }
 
     private async Task<MarketSnapshot> GetYahooSnapshotAsync(string interval, CancellationToken cancellationToken)
@@ -385,7 +425,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             $"https://query1.finance.yahoo.com/v8/finance/chart/{Uri.EscapeDataString(config.ChartAnalysisDataSymbol)}" +
             $"?range={range}&interval={yahooInterval}";
 
-        var raw = await GetRawChartAsync(url, cancellationToken);
+        var raw = await GetRawChartAsync(url, "Yahoo", "https://finance.yahoo.com/", cancellationToken);
         var candles = ParseCandles(raw);
         if (normalizedInterval == "240")
         {
@@ -400,6 +440,32 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
         return MarketSnapshot.Create(config.ChartAnalysisSymbol, config.ChartAnalysisDataSymbol, normalizedInterval, candles);
     }
 
+    private async Task<MarketSnapshot> GetCoinbaseSnapshotAsync(
+        string productId,
+        string interval,
+        CancellationToken cancellationToken)
+    {
+        var normalizedInterval = ChartCommand.NormalizeInterval(interval);
+        var granularity = normalizedInterval == "240" ? 3600 : ToCoinbaseGranularity(normalizedInterval);
+        var url =
+            $"https://api.exchange.coinbase.com/products/{Uri.EscapeDataString(productId)}/candles" +
+            $"?granularity={granularity}";
+
+        var raw = await GetRawChartAsync(url, "Coinbase", "https://www.coinbase.com/", cancellationToken);
+        var candles = ParseCoinbaseCandles(raw);
+        if (normalizedInterval == "240")
+        {
+            candles = AggregateCandles(candles, groupSize: 4);
+        }
+
+        if (candles.Count < 60)
+        {
+            throw new InvalidOperationException($"Không đủ dữ liệu COINBASE:{productId} {normalizedInterval}.");
+        }
+
+        return MarketSnapshot.Create(config.ChartAnalysisSymbol, $"COINBASE:{productId}", normalizedInterval, candles);
+    }
+
     private async Task<MarketSnapshot> GetBinanceSnapshotAsync(
         string binanceSymbol,
         string interval,
@@ -411,7 +477,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             $"https://api.binance.com/api/v3/klines?symbol={Uri.EscapeDataString(binanceSymbol)}" +
             $"&interval={binanceInterval}&limit=500";
 
-        var raw = await GetRawChartAsync(url, cancellationToken);
+        var raw = await GetRawChartAsync(url, "Binance", "https://www.binance.com/", cancellationToken);
         var candles = ParseBinanceCandles(raw);
 
         if (candles.Count < 60)
@@ -422,7 +488,11 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
         return MarketSnapshot.Create(config.ChartAnalysisSymbol, $"BINANCE:{binanceSymbol}", normalizedInterval, candles);
     }
 
-    private async Task<string> GetRawChartAsync(string url, CancellationToken cancellationToken)
+    private async Task<string> GetRawChartAsync(
+        string url,
+        string providerName,
+        string referrer,
+        CancellationToken cancellationToken)
     {
         lock (_cacheLock)
         {
@@ -433,7 +503,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             }
         }
 
-        var raw = await FetchRawChartWithRetryAsync(url, cancellationToken);
+        var raw = await FetchRawChartWithRetryAsync(url, providerName, referrer, cancellationToken);
 
         lock (_cacheLock)
         {
@@ -443,7 +513,11 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
         return raw;
     }
 
-    private async Task<string> FetchRawChartWithRetryAsync(string url, CancellationToken cancellationToken)
+    private async Task<string> FetchRawChartWithRetryAsync(
+        string url,
+        string providerName,
+        string referrer,
+        CancellationToken cancellationToken)
     {
         string? lastError = null;
 
@@ -453,7 +527,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36");
             request.Headers.Accept.ParseAdd("application/json,text/plain,*/*");
             request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
-            request.Headers.Referrer = new Uri("https://finance.yahoo.com/");
+            request.Headers.Referrer = new Uri(referrer);
 
             using var response = await httpClient.SendAsync(request, cancellationToken);
             var raw = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -463,7 +537,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
                 return raw;
             }
 
-            lastError = $"Yahoo data error {(int)response.StatusCode}: {raw}";
+            lastError = $"{providerName} data error {(int)response.StatusCode}: {raw}";
             var shouldRetry = (int)response.StatusCode == 429 || (int)response.StatusCode >= 500;
             if (!shouldRetry || attempt == 3)
             {
@@ -473,7 +547,7 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             await Task.Delay(TimeSpan.FromSeconds(attempt * 5), cancellationToken);
         }
 
-        throw new InvalidOperationException(lastError ?? "Yahoo data error.");
+        throw new InvalidOperationException(lastError ?? $"{providerName} data error.");
     }
 
     private static string ToYahooInterval(string interval)
@@ -502,6 +576,62 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
             "W" => "1w",
             _ => "15m"
         };
+
+    private static string ToTwelveDataInterval(string interval)
+        => interval switch
+        {
+            "1" => "1min",
+            "5" => "5min",
+            "15" => "15min",
+            "30" => "30min",
+            "60" => "1h",
+            "240" => "4h",
+            "D" => "1day",
+            "W" => "1week",
+            _ => "15min"
+        };
+
+    private static int ToCoinbaseGranularity(string interval)
+        => interval switch
+        {
+            "1" => 60,
+            "5" => 300,
+            "15" => 900,
+            "30" => 900,
+            "60" => 3600,
+            "240" => 3600,
+            "D" => 86400,
+            "W" => 86400,
+            _ => 900
+        };
+
+    private static bool TryGetCoinbaseProductId(string dataSymbol, out string productId)
+    {
+        const string prefix = "COINBASE:";
+
+        if (dataSymbol.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            productId = dataSymbol[prefix.Length..].Trim().ToUpperInvariant();
+            return !string.IsNullOrWhiteSpace(productId);
+        }
+
+        productId = string.Empty;
+        return false;
+    }
+
+    private static bool TryGetTwelveDataSymbol(string dataSymbol, out string symbol)
+    {
+        const string prefix = "TWELVEDATA:";
+
+        if (dataSymbol.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            symbol = dataSymbol[prefix.Length..].Trim().ToUpperInvariant();
+            return !string.IsNullOrWhiteSpace(symbol);
+        }
+
+        symbol = string.Empty;
+        return false;
+    }
 
     private static bool TryGetBinanceSymbol(string dataSymbol, out string binanceSymbol)
     {
@@ -574,8 +704,74 @@ internal sealed class MarketDataClient(HttpClient httpClient, BotConfig config)
         return candles;
     }
 
+    private static IReadOnlyList<Candle> ParseCoinbaseCandles(string rawJson)
+    {
+        using var document = JsonDocument.Parse(rawJson);
+        var candles = new List<Candle>();
+
+        foreach (var item in document.RootElement.EnumerateArray())
+        {
+            candles.Add(new Candle(
+                Time: DateTimeOffset.FromUnixTimeSeconds(item[0].GetInt64()),
+                Low: item[1].GetDecimal(),
+                High: item[2].GetDecimal(),
+                Open: item[3].GetDecimal(),
+                Close: item[4].GetDecimal(),
+                Volume: item[5].GetDecimal()));
+        }
+
+        return candles.OrderBy(candle => candle.Time).ToArray();
+    }
+
+    private static IReadOnlyList<Candle> ParseTwelveDataCandles(string rawJson)
+    {
+        using var document = JsonDocument.Parse(rawJson);
+        var root = document.RootElement;
+
+        if (root.TryGetProperty("values", out var valuesElement) &&
+            valuesElement.ValueKind == JsonValueKind.Array)
+        {
+            var candles = new List<Candle>();
+
+            foreach (var item in valuesElement.EnumerateArray())
+            {
+                candles.Add(new Candle(
+                    Time: ParseTwelveDataTime(item.GetProperty("datetime").GetString()),
+                    Open: ParseDecimal(item.GetProperty("open")),
+                    High: ParseDecimal(item.GetProperty("high")),
+                    Low: ParseDecimal(item.GetProperty("low")),
+                    Close: ParseDecimal(item.GetProperty("close")),
+                    Volume: item.TryGetProperty("volume", out var volumeElement) ? ParseDecimal(volumeElement) : 0));
+            }
+
+            return candles.OrderBy(candle => candle.Time).ToArray();
+        }
+
+        if (root.TryGetProperty("message", out var messageElement) &&
+            messageElement.ValueKind == JsonValueKind.String)
+        {
+            throw new InvalidOperationException($"Twelve Data error: {messageElement.GetString()}");
+        }
+
+        throw new InvalidOperationException("Twelve Data returned an unexpected response.");
+    }
+
     private static decimal ParseDecimal(JsonElement element)
         => decimal.Parse(element.GetString() ?? "0", CultureInfo.InvariantCulture);
+
+    private static DateTimeOffset ParseTwelveDataTime(string? value)
+    {
+        if (DateTimeOffset.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new InvalidOperationException($"Invalid Twelve Data candle time: {value}");
+    }
 
     private static IReadOnlyList<Candle> AggregateCandles(IReadOnlyList<Candle> candles, int groupSize)
     {

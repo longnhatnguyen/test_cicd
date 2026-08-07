@@ -10,11 +10,12 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 - `OPENAI_MODEL`: tuy chon, mac dinh `gpt-4.1-mini`
 - `OPENAI_SYSTEM_PROMPT`: tuy chon
 - `OPENAI_API_BASE`: tuy chon, mac dinh `https://api.openai.com/v1`
+- `TWELVE_DATA_API_KEY`: API key de lay OHLC that cua `XAU/USD` neu dung provider Twelve Data
 - `CHART_ANALYSIS_ENABLED`: bat job phan tich chart dinh ky, mac dinh `false`
 - `CHART_ANALYSIS_CHAT_ID`: Telegram chat id nhan tin hieu
 - `CHART_ANALYSIS_URL`: link TradingView public, bot se boc query `symbol`
 - `CHART_ANALYSIS_SYMBOL`: symbol TradingView, mac dinh `OANDA:XAUUSD`
-- `CHART_ANALYSIS_DATA_SYMBOL`: symbol du lieu, mac dinh `BINANCE:XAUTUSDT`; cung ho tro Yahoo nhu `GC=F`
+- `CHART_ANALYSIS_DATA_SYMBOL`: symbol du lieu, mac dinh `TWELVEDATA:XAU/USD`; cung ho tro Yahoo nhu `GC=F`, Coinbase nhu `COINBASE:PAXG-USD`, hoac Binance nhu `BINANCE:XAUTUSDT`
 - `CHART_ANALYSIS_INTERVAL`: timeframe cu, mac dinh `M5`
 - `CHART_ANALYSIS_INTERVALS`: danh sach timeframe da khung, mac dinh `M5,M15,H1,H4`
 - `CHART_ANALYSIS_PERIOD_MINUTES`: chu ky phan tich, mac dinh `5`
@@ -29,6 +30,7 @@ Bot Telegram don gian chay bang polling, hop de deploy tren VPS Linux.
 export TELEGRAM_BOT_TOKEN="<telegram-token>"
 export TELEGRAM_ACCESS_PASSWORD="<mat-khau-vao-bot>"
 export OPENAI_API_KEY="<openai-api-key>"
+export TWELVE_DATA_API_KEY="<twelve-data-api-key>"
 export OPENAI_MODEL="gpt-4.1-mini"
 
 dotnet run --project TelegramAiBot
@@ -84,7 +86,7 @@ Bat job tu dong 5 phut/lan tren server:
 export CHART_ANALYSIS_ENABLED=true
 export CHART_ANALYSIS_CHAT_ID="<telegram-chat-id>"
 export CHART_ANALYSIS_URL="https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD"
-export CHART_ANALYSIS_DATA_SYMBOL="BINANCE:XAUTUSDT"
+export CHART_ANALYSIS_DATA_SYMBOL="TWELVEDATA:XAU/USD"
 export CHART_ANALYSIS_INTERVALS="M5,M15,H1,H4"
 export CHART_ANALYSIS_PERIOD_MINUTES=5
 export CHART_ANALYSIS_SEND_NO_TRADE=false
@@ -93,7 +95,7 @@ export CHART_ANALYSIS_MAX_RISK_PRICE=10
 export CHART_ANALYSIS_MAX_REWARD_PRICE=10
 ```
 
-Bot lay OHLC tu Binance/Yahoo de phan tich nhe hon, khong mo Chromium va khong chup TradingView nua. Mac dinh bot hien thi `OANDA:XAUUSD` nhung dung `BINANCE:XAUTUSDT` lam proxy du lieu vang intraday de tranh loi Yahoo `429 Too Many Requests` tren VPS.
+Bot lay OHLC that cua `XAU/USD` qua Twelve Data de phan tich nhe hon, khong mo Chromium va khong chup TradingView nua. Mac dinh bot hien thi `OANDA:XAUUSD` va dung `TWELVEDATA:XAU/USD` lam nguon du lieu. Coinbase/Binance/Yahoo chi la fallback tuy chon, khong nen dung neu can dung spot XAUUSD.
 
 Job tu dong chi gui tin hieu vao Telegram khi co `SIGNAL: ENTRY`, tru khi `CHART_ANALYSIS_SEND_NO_TRADE=true`. Neu khong co setup ngan ro, bot im lang de tranh spam. Mac dinh job chart khong goi OpenAI; bat `CHART_ANALYSIS_USE_AI=true` neu muon AI viet lai phan giai thich khi da co entry.
 
@@ -104,6 +106,7 @@ Neu repo da co cac secret nen tang sau thi bot da du dieu kien deploy va goi AI:
 ```text
 GHCR_READ_TOKEN
 OPENAI_API_KEY
+TWELVE_DATA_API_KEY
 SERVER_HOST
 SERVER_PORT
 SERVER_SSH_PASSWORD
@@ -123,7 +126,7 @@ Cac secret chart ben duoi khong bat buoc vi code da co gia tri mac dinh:
 
 ```text
 CHART_ANALYSIS_URL=https://vn.tradingview.com/chart/?symbol=OANDA%3AXAUUSD
-CHART_ANALYSIS_DATA_SYMBOL=BINANCE:XAUTUSDT
+CHART_ANALYSIS_DATA_SYMBOL=TWELVEDATA:XAU/USD
 CHART_ANALYSIS_INTERVALS=M5,M15,H1,H4
 CHART_ANALYSIS_PERIOD_MINUTES=5
 CHART_ANALYSIS_SEND_NO_TRADE=false
