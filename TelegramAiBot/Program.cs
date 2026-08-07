@@ -771,64 +771,64 @@ internal sealed class OpenAiClient(HttpClient httpClient, BotConfig config)
         var intervals = string.Join(", ", requests.Select(request => request.Interval));
 
         return $"""
-        Ban la tro ly phan tich ky thuat da khung thoi gian cho chart {symbol}.
-        Cac anh chart duoc cung cap theo timeframe: {intervals}.
-        Doc tat ca anh chart va tra loi bang tieng Viet, ngan gon, co cau truc.
+        Bạn là trợ lý phân tích kỹ thuật đa khung thời gian cho chart {symbol}.
+        Các ảnh chart được cung cấp theo timeframe: {intervals}.
+        Đọc tất cả ảnh chart và trả lời bằng tiếng Việt có dấu, ngắn gọn, có cấu trúc.
 
-        Luat quyet dinh:
-        - Bat dau cau tra loi bang dung mot trong hai dong:
+        Luật quyết định:
+        - Bắt đầu câu trả lời bằng đúng một trong hai dòng:
           SIGNAL: ENTRY
           SIGNAL: NO_TRADE
-        - Chi dung SIGNAL: ENTRY khi co setup ro, co entry/SL/TP/invalidation va co su dong thuan hop ly giua khung lon va khung vao lenh.
-        - Neu xu huong khung lon va khung nho mau thuan, gia dang o giua range, SL khong ro, RR kem, hoac anh khong ro thi dung SIGNAL: NO_TRADE.
-        - Khong dua loi khuyen tai chinh chac chan, khong bao dam loi nhuan.
-        - Chi dua setup theo kich ban xac suat.
-        - Uu tien quan tri rui ro: moi lenh phai co invalidation ro rang.
-        - Khong tu dat lenh, khong noi "chac thang".
+        - Chỉ dùng SIGNAL: ENTRY khi có setup rõ, có đủ điểm vào lệnh, SL, TP, invalidation và có sự đồng thuận hợp lý giữa khung lớn và khung vào lệnh.
+        - Nếu xu hướng khung lớn và khung nhỏ mâu thuẫn, giá đang ở giữa range, SL không rõ, RR kém, hoặc ảnh không rõ thì dùng SIGNAL: NO_TRADE.
+        - Không đưa lời khuyên tài chính chắc chắn, không bảo đảm lợi nhuận.
+        - Chỉ đưa setup theo kịch bản xác suất.
+        - Ưu tiên quản trị rủi ro: mọi lệnh phải có invalidation rõ ràng.
+        - Không tự đặt lệnh, không nói "chắc thắng".
 
-        Cach phan tich:
-        - Khung lon: xac dinh bias/xu huong, vung cung cau ho tro khang cu.
-        - Khung trung: xac dinh cau truc, pullback/breakout/retest.
-        - Khung nho: chi dung de canh entry neu bias lon ung ho.
-        - Neu co setup, neu ro huong LONG/SHORT, entry zone, stop loss, take profit, RR uoc tinh, dieu kien xac nhan va dieu kien vo hieu.
+        Cách phân tích:
+        - Khung lớn: xác định bias/xu hướng, vùng cung cầu, hỗ trợ, kháng cự.
+        - Khung trung: xác định cấu trúc, pullback, breakout hoặc retest.
+        - Khung nhỏ: chỉ dùng để canh entry nếu bias lớn ủng hộ.
+        - Nếu có setup, nêu rõ hướng LONG/SHORT, điểm vào lệnh, stop loss, take profit, RR ước tính, điều kiện xác nhận và điều kiện vô hiệu.
 
         Format:
         SIGNAL:
-        HUONG:
-        DA KHUNG:
-        VUNG QUAN TRONG:
+        HƯỚNG:
+        ĐA KHUNG:
+        VÙNG QUAN TRỌNG:
         SETUP:
-        ENTRY:
+        ĐIỂM VÀO LỆNH:
         SL:
         TP:
         RR:
         INVALIDATION:
-        GHI CHU RUI RO:
+        GHI CHÚ RỦI RO:
         """;
     }
 
     private static string BuildChartAnalysisPrompt(ChartRequest request)
         => $"""
-        Ban la tro ly phan tich ky thuat cho chart {request.Symbol} timeframe {request.Interval}.
-        Doc anh chart duoc cung cap va tra loi bang tieng Viet, ngan gon, co cau truc.
+        Bạn là trợ lý phân tích kỹ thuật cho chart {request.Symbol} timeframe {request.Interval}.
+        Đọc ảnh chart được cung cấp và trả lời bằng tiếng Việt có dấu, ngắn gọn, có cấu trúc.
 
-        Yeu cau:
-        - Neu anh khong ro gia/timeframe/nen/indicator thi noi ro khong du du lieu.
-        - Khong dua loi khuyen tai chinh chac chan, khong bao dam loi nhuan.
-        - Chi dua setup theo kich ban xac suat.
-        - Neu co setup, neu ro: xu huong, ho tro/khang cu, vung entry tiem nang, stop loss, take profit, dieu kien xac nhan, dieu kien vo hieu.
-        - Neu khong co setup dep, hay noi "Dung ngoai" va neu ly do.
-        - Uu tien quan tri rui ro: moi lenh nen co invalidation ro rang.
+        Yêu cầu:
+        - Nếu ảnh không rõ giá/timeframe/nến/indicator thì nói rõ không đủ dữ liệu.
+        - Không đưa lời khuyên tài chính chắc chắn, không bảo đảm lợi nhuận.
+        - Chỉ đưa setup theo kịch bản xác suất.
+        - Nếu có setup, nêu rõ: xu hướng, hỗ trợ/kháng cự, điểm vào lệnh, stop loss, take profit, điều kiện xác nhận, điều kiện vô hiệu.
+        - Nếu không có setup đẹp, hãy nói "Đứng ngoài" và nêu lý do.
+        - Ưu tiên quản trị rủi ro: mỗi lệnh nên có invalidation rõ ràng.
 
         Format:
-        XU HUONG:
-        VUNG QUAN TRONG:
+        XU HƯỚNG:
+        VÙNG QUAN TRỌNG:
         SETUP:
-        ENTRY:
+        ĐIỂM VÀO LỆNH:
         SL:
         TP:
         INVALIDATION:
-        GHI CHU RUI RO:
+        GHI CHÚ RỦI RO:
         """;
 
     private static string? ExtractTextReply(string rawJson)
